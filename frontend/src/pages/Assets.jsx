@@ -36,8 +36,18 @@ export default function Assets() {
   const fetchAssets = async () => {
     setLoading(true);
     try {
-      const res = await client.get(`/stations/${selectedStation._id}/assets`);
-      setAssets(res.data.data);
+      const [assetsRes, intelRes] = await Promise.all([
+        client.get(`/stations/${selectedStation._id}/assets`),
+        client.get(`/stations/${selectedStation._id}/intelligence`).catch(() => null)
+      ]);
+      const intelList = intelRes?.data?.data?.assetsIntelligence || [];
+      const intelMap = {};
+      intelList.forEach(ai => { intelMap[ai.assetId] = ai; });
+      const enrichedAssets = assetsRes.data.data.map(a => ({
+        ...a,
+        intelligence: intelMap[a.assetId] || null
+      }));
+      setAssets(enrichedAssets);
     } catch {}
     finally { setLoading(false); }
   };

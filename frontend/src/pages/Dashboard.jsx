@@ -113,50 +113,53 @@ export default function Dashboard() {
   const activeAlerts = alerts.filter(a => a.status === 'ACTIVE');
   
   // Canonical Extracted Intelligence
+  const isMaitri = selectedStation?.code === 'MTR';
   const resilience = {
-    score: intelligence?.resilienceScore ?? 75,
-    status: intelligence?.resilienceStatus ?? 'STABLE',
+    score: intelligence?.resilienceScore ?? (isMaitri ? 94 : 47),
+    status: intelligence?.resilienceStatus ?? (isMaitri ? 'ROBUST' : 'VULNERABLE'),
     operationalStatus: intelligence?.operationalStatus ?? (openAlerts.length > 0 ? 'DEGRADED' : 'ONLINE'),
     breakdown: intelligence?.resilienceBreakdown ?? {
-      assetHealth: 75,
-      energyMargin: 78,
-      fuelReserve: 72,
-      environment: 65,
-      cascadeExposure: 80
+      assetHealth: isMaitri ? 98 : 81,
+      energyMargin: isMaitri ? 100 : 83,
+      fuelReserve: isMaitri ? 99 : 77,
+      environment: isMaitri ? 60 : 39,
+      cascadeExposure: isMaitri ? 100 : 20
     }
   };
 
   const env = intelligence?.environmental ?? {
-    temperature: -30.2,
-    condition: 'SEVERE COLD',
-    stressLevel: 'HIGH',
-    stressFactor: 0.65,
-    impactSummary: 'Heating demand ↑ (+42%) · Generator load ↑ · Energy reserve ↓'
+    temperature: isMaitri ? -22.5 : -30.5,
+    condition: isMaitri ? 'COLD STRESS' : 'SEVERE COLD',
+    stressLevel: isMaitri ? 'MODERATE' : 'HIGH',
+    stressFactor: isMaitri ? 0.40 : 0.61,
+    impactSummary: isMaitri 
+      ? 'Thermal baseline nominal · Heating demand +25% · Operations stable'
+      : 'Heating demand ↑ (+40%) · Generator load ↑ · Energy reserve nominal'
   };
 
   const energy = intelligence?.energy ?? {
-    currentGeneration: 485,
-    estimatedDemand: 421,
-    energyMargin: 64,
-    safetyMarginPercent: 15.2,
+    currentGeneration: 492,
+    estimatedDemand: isMaitri ? 410 : 426,
+    energyMargin: isMaitri ? 82 : 66,
+    safetyMarginPercent: isMaitri ? 20.0 : 15.5,
     status: 'HEALTHY',
-    peakDemand: 442,
+    peakDemand: isMaitri ? 442 : 460,
     forecast: {
-      '6h': { expectedDemand: 426, expectedMargin: 59 },
-      '12h': { expectedDemand: 432, expectedMargin: 53 },
-      '24h': { expectedDemand: 420, expectedMargin: 65 }
+      '6h': { expectedDemand: isMaitri ? 410 : 426, expectedMargin: isMaitri ? 82 : 66 },
+      '12h': { expectedDemand: isMaitri ? 418 : 434, expectedMargin: isMaitri ? 74 : 58 },
+      '24h': { expectedDemand: isMaitri ? 410 : 426, expectedMargin: isMaitri ? 82 : 66 }
     }
   };
 
   const fuel = intelligence?.fuel ?? {
-    level: 73.2,
-    remainingRuntimeDays: 19.2,
-    consumptionRatePercentPerDay: 4.1,
+    level: isMaitri ? 84.09 : 73.0,
+    remainingRuntimeDays: isMaitri ? 24.7 : 19.2,
+    consumptionRatePercentPerDay: isMaitri ? 3.4 : 3.8,
     consumptionTrend: 'STABLE',
-    status: 'WARNING',
+    status: 'HEALTHY',
     scenarios: {
-      normal: { estimatedRemainingDays: 19.2, burnRatePercentPerDay: 4.1 },
-      severeCold: { estimatedRemainingDays: 14.2, burnRatePercentPerDay: 5.1, reductionDays: 5.0 }
+      normal: { estimatedRemainingDays: isMaitri ? 24.7 : 19.2, burnRatePercentPerDay: isMaitri ? 3.4 : 3.8 },
+      severeCold: { estimatedRemainingDays: isMaitri ? 19.8 : 15.4, burnRatePercentPerDay: isMaitri ? 4.3 : 4.8, reductionDays: 4.9 }
     }
   };
 

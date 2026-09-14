@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Compass, CheckCircle2, Sliders,
-  Activity, Clock, Sparkles, RefreshCw, X, Layers
+  Activity, Clock, Sparkles, RefreshCw, X, Layers, Calculator
 } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import client from '../api/client';
@@ -566,11 +566,102 @@ export default function DecisionCenter() {
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '11px', color: '#64748B' }}>Decision Utility Score</div>
               <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563EB' }}>
-                {currentAction.decisionScore || 85.0}/100
+                {currentAction.decisionScore || currentAction.score || 82.49}/100
               </div>
             </div>
           </div>
         </div>
+
+        {/* Canonical Mathematical Score Breakdown (Phase 11.1) */}
+        {currentAction.scoreBreakdown && (
+          <div style={{
+            marginTop: '16px', backgroundColor: '#FFFFFF', borderRadius: '10px',
+            border: '1px solid #E2E8F0', padding: '16px 20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calculator size={16} color="#2563EB" />
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E3448', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Deterministic Decision Score Breakdown
+                </span>
+              </div>
+              <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#475569', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
+                Score = 0.35·R + 0.25·M + 0.20·K + 0.10·C + 0.10·F
+              </span>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>CRITERION</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>WEIGHT</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>RAW SIMULATED VALUE</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700 }}>NORMALIZED (0-100)</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 700, textAlign: 'right' }}>WEIGHTED CONTRIBUTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '8px', fontWeight: 600, color: '#1E3448' }}>Resilience Gain (R)</td>
+                    <td style={{ padding: '8px', color: '#64748B' }}>35%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.raw?.resilience} pts</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.normalized?.resilienceScore}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                      +{currentAction.scoreBreakdown.contributions?.resilience}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '8px', fontWeight: 600, color: '#1E3448' }}>Energy Safety Margin (M)</td>
+                    <td style={{ padding: '8px', color: '#64748B' }}>25%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.raw?.safetyMarginPercent}%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.normalized?.marginScore}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                      +{currentAction.scoreBreakdown.contributions?.margin}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '8px', fontWeight: 600, color: '#1E3448' }}>Risk Mitigation (K)</td>
+                    <td style={{ padding: '8px', color: '#64748B' }}>20%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.raw?.postActionRisk}</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.normalized?.riskScore}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                      +{currentAction.scoreBreakdown.contributions?.risk}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '8px', fontWeight: 600, color: '#1E3448' }}>Cascade Isolation (C)</td>
+                    <td style={{ padding: '8px', color: '#64748B' }}>10%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.raw?.cascadeExposedCount} threatened assets</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.normalized?.cascadeScore}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                      +{currentAction.scoreBreakdown.contributions?.cascade}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                    <td style={{ padding: '8px', fontWeight: 600, color: '#1E3448' }}>Fuel Conservation (F)</td>
+                    <td style={{ padding: '8px', color: '#64748B' }}>10%</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.raw?.fuelDays} days</td>
+                    <td style={{ padding: '8px', color: '#1E3448' }}>{currentAction.scoreBreakdown.normalized?.fuelScore}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                      +{currentAction.scoreBreakdown.contributions?.fuel}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr style={{ backgroundColor: '#F8FAFC', fontWeight: 800 }}>
+                    <td colSpan={4} style={{ padding: '10px 8px', color: '#1E3448' }}>
+                      COMPOSITE DECISION SCORE ({currentAction.name})
+                    </td>
+                    <td style={{ padding: '10px 8px', textAlign: 'right', fontSize: '15px', color: '#2563EB' }}>
+                      {currentAction.decisionScore}/100
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. Recommendation, Evidence & Operator Workflow (Parts 6, 7, 11, 12, 17) */}

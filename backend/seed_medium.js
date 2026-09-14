@@ -99,45 +99,61 @@ async function seed() {
         };
 
         if (asset.assetId === 'ENV-01') {
-          const diurnal = Math.sin(((24 - i) / 24) * Math.PI * 2) * 3;
-          doc.temperature = Number((-30.5 + diurnal + (Math.random() * 0.8 - 0.4)).toFixed(1));
-          doc.pressure = Math.round(982 + Math.random() * 6);
-          doc.humidity = Math.round(62 + Math.random() * 8);
+          if (i === 0) {
+            doc.temperature = -30.5;
+            doc.pressure = 982;
+            doc.humidity = 65;
+          } else {
+            const diurnal = Math.sin(((24 - i) / 24) * Math.PI * 2) * 3;
+            doc.temperature = Number((-30.5 + diurnal).toFixed(1));
+            doc.pressure = Math.round(982 + ((24 - i) % 5));
+            doc.humidity = Math.round(62 + ((24 - i) % 6));
+          }
         } else if (asset.assetId === 'FUEL-01') {
-          const fuelDrawdown = (24 - i) * 0.158;
-          doc.fuelLevel = Number((76.8 - fuelDrawdown + (Math.random() * 0.04 - 0.02)).toFixed(2));
-          doc.temperature = Number((-12 + Math.random() * 2).toFixed(1));
+          const fuelDrawdown = (24 - i) * 0.15833;
+          doc.fuelLevel = Number((76.8 - fuelDrawdown).toFixed(2));
+          doc.temperature = -12.0;
         } else if (asset.assetId === 'DG-001') {
           const progress = (24 - i) / 24;
-          doc.powerOutput = Math.round(480 + Math.random() * 15);
-          doc.generatorLoad = Math.round(72 + progress * 10);
-          doc.temperature = Number((82 + progress * 18.2 + (Math.random() * 1.0 - 0.5)).toFixed(1));
-          doc.vibration = Number((0.22 + progress * 0.50 + (Math.random() * 0.015)).toFixed(3));
-          doc.coolantTemperature = Number((84 + progress * 17.5).toFixed(1));
-          doc.batteryVoltage = 23.8;
-          doc.fuelLevel = 73.0;
+          if (i === 0) {
+            doc.powerOutput = 492;
+            doc.generatorLoad = 82;
+            doc.temperature = 100.2;
+            doc.vibration = 0.720;
+            doc.coolantTemperature = 101.5;
+            doc.batteryVoltage = 23.8;
+            doc.fuelLevel = 73.0;
+          } else {
+            doc.powerOutput = Math.round(480 + progress * 12);
+            doc.generatorLoad = Math.round(72 + progress * 10);
+            doc.temperature = Number((82.0 + progress * 18.2).toFixed(1));
+            doc.vibration = Number((0.220 + progress * 0.500).toFixed(3));
+            doc.coolantTemperature = Number((84.0 + progress * 17.5).toFixed(1));
+            doc.batteryVoltage = 23.8;
+            doc.fuelLevel = 73.0;
+          }
         } else if (asset.assetId === 'DG-002') {
           doc.powerOutput = 0;
           doc.generatorLoad = 0;
-          doc.temperature = Number((34 + Math.random() * 2).toFixed(1));
+          doc.temperature = 34.0;
           doc.vibration = 0.01;
-          doc.coolantTemperature = 35;
+          doc.coolantTemperature = 35.0;
           doc.batteryVoltage = 24.2;
           doc.fuelLevel = 73.0;
         } else if (asset.type === 'Battery System') {
-          doc.batteryVoltage = Number((24.2 + Math.random() * 0.4).toFixed(2));
-          doc.temperature = Number((21 + Math.random() * 2).toFixed(1));
+          doc.batteryVoltage = 24.2;
+          doc.temperature = 21.0;
         } else if (asset.type === 'HVAC') {
-          doc.powerOutput = Math.round(28 + Math.random() * 6);
-          doc.temperature = Number((19 + Math.random() * 2).toFixed(1));
-          doc.vibration = Number((0.08 + Math.random() * 0.03).toFixed(2));
+          doc.powerOutput = 28;
+          doc.temperature = 19.0;
+          doc.vibration = 0.08;
         } else if (asset.type === 'Pump') {
-          doc.powerOutput = Math.round(14 + Math.random() * 3);
-          doc.temperature = Number((42 + Math.random() * 3).toFixed(1));
-          doc.vibration = Number((0.12 + Math.random() * 0.03).toFixed(2));
+          doc.powerOutput = 14;
+          doc.temperature = 42.0;
+          doc.vibration = 0.12;
         } else {
           doc.powerOutput = 10;
-          doc.temperature = 22;
+          doc.temperature = 22.0;
           doc.vibration = 0.05;
         }
         telemetryDocs.push(doc);
@@ -199,32 +215,44 @@ async function seed() {
         };
 
         if (asset.assetId === 'MTR-ENV-01') {
-          // Inland weather -21°C to -25°C (Cold Stress, less extreme than coastal storm)
-          const diurnal = Math.sin(((24 - i) / 24) * Math.PI * 2) * 2;
-          doc.temperature = Number((-22.5 + diurnal + (Math.random() * 0.5 - 0.25)).toFixed(1));
-          doc.pressure = Math.round(994 + Math.random() * 4);
-          doc.humidity = Math.round(52 + Math.random() * 6);
+          if (i === 0) {
+            doc.temperature = -22.5;
+            doc.pressure = 994;
+            doc.humidity = 52;
+          } else {
+            const diurnal = Math.sin(((24 - i) / 24) * Math.PI * 2) * 2;
+            doc.temperature = Number((-22.5 + diurnal).toFixed(1));
+            doc.pressure = Math.round(994 + ((24 - i) % 4));
+            doc.humidity = Math.round(52 + ((24 - i) % 5));
+          }
         } else if (asset.assetId === 'MTR-FUEL-01') {
-          // 84% reserve, 3.4% daily consumption -> 24 days remaining
-          const fuelDrawdown = (24 - i) * 0.142;
+          const fuelDrawdown = (24 - i) * 0.14208;
           doc.fuelLevel = Number((87.5 - fuelDrawdown).toFixed(2));
-          doc.temperature = -8;
+          doc.temperature = -8.0;
         } else if (asset.assetId === 'MTR-DG-01') {
-          // Primary generator nominal at 480kW (healthy, low vibration)
-          doc.powerOutput = Math.round(480 + Math.random() * 15);
-          doc.generatorLoad = 60;
-          doc.temperature = Number((68 + Math.random() * 2).toFixed(1));
-          doc.vibration = Number((0.11 + Math.random() * 0.015).toFixed(3));
-          doc.coolantTemperature = 72;
-          doc.fuelLevel = 84.0;
+          if (i === 0) {
+            doc.powerOutput = 492;
+            doc.generatorLoad = 60;
+            doc.temperature = 68.0;
+            doc.vibration = 0.110;
+            doc.coolantTemperature = 72.0;
+            doc.fuelLevel = 84.0;
+          } else {
+            doc.powerOutput = 490;
+            doc.generatorLoad = 60;
+            doc.temperature = 68.0;
+            doc.vibration = 0.110;
+            doc.coolantTemperature = 72.0;
+            doc.fuelLevel = 84.0;
+          }
         } else if (asset.assetId === 'MTR-DG-02') {
           doc.powerOutput = 0;
           doc.generatorLoad = 0;
-          doc.temperature = 28;
+          doc.temperature = 28.0;
           doc.vibration = 0.01;
         } else if (asset.type === 'Battery System') {
           doc.batteryVoltage = 24.3;
-          doc.temperature = 20;
+          doc.temperature = 20.0;
         } else if (asset.type === 'HVAC') {
           doc.powerOutput = 24;
           doc.temperature = 20;

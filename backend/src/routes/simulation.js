@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 const Telemetry = require('../models/Telemetry');
 const intelligenceService = require('../services/intelligenceService');
 
@@ -23,20 +24,37 @@ router.post('/', async (req, res) => {
 
         const simulationResult = await intelligenceService.runSimulation(assetId, latestTelemetry.toJSON(), changes);
         
-        // Phase 8: Calculate station-level resilience and energy impact of the scenario
-        const baseResilience = 82;
+        // Retrieve actual station baseline
+        let baseResilience = 47;
+        let baseMargin = 66;
+        try {
+            const baseUrl = `http://localhost:${process.env.PORT || 5001}`;
+            const intelRes = await axios.get(`${baseUrl}/api/stations/${asset.stationId}/intelligence`);
+            if (intelRes.data?.data) {
+                baseResilience = intelRes.data.data.resilienceScore ?? 47;
+                baseMargin = intelRes.data.data.energy?.energyMargin ?? 66;
+            }
+        } catch (err) {
+            // fallback to station-appropriate defaults if internal fetch fails
+        }
+
         const riskDelta = Math.max(0, simulationResult.change?.riskIncrease || 0);
         const cascadeCount = simulationResult.cascade?.cascadeRisks?.length || 0;
         
         // Explainable resilience impact
-        const resilienceDrop = Math.min(65, Math.round(riskDelta * 40 + cascadeCount * 6 + ((changes.generatorLoad && changes.generatorLoad > 80) ? 10 : 0)));
-        const simulatedResilience = Math.max(18, baseResilience - resilienceDrop);
+        const resilienceDrop = Math.min(baseResilience - 10, Math.round(riskDelta * 35 + cascadeCount * 4 + ((changes.generatorLoad && changes.generatorLoad > 80) ? 8 : 0)));
+        const simulatedResilience = Math.max(10, baseResilience - resilienceDrop);
 
         // Energy margin impact
-        const baseMargin = 78;
-        const loadExcess = changes.generatorLoad ? Math.max(0, changes.generatorLoad - 68) : 0;
-        const marginDrop = Math.min(70, Math.round(loadExcess * 1.6 + riskDelta * 35));
-        const simulatedMargin = Math.max(8, baseMargin - marginDrop);
+        let marginDrop = 0;
+        if (changes.powerOutput !== undefined) {
+            const powerDelta = Math.max(0, (latestTelemetry.powerOutput || 492) - changes.powerOutput);
+            marginDrop = powerDelta;
+        } else {
+            const loadExcess = changes.generatorLoad ? Math.max(0, changes.generatorLoad - 68) : 0;
+            marginDrop = Math.min(70, Math.round(loadExcess * 1.6 + riskDelta * 35));
+        }
+        const simulatedMargin = baseMargin - marginDrop;
 
         // Fuel consumption impact
         const fuelDeltaPercent = changes.generatorLoad ? Math.round(((changes.generatorLoad - 68) / 68) * 100) : 0;

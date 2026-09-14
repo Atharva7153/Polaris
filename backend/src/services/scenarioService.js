@@ -18,13 +18,13 @@ const resilienceService = require('./resilienceService');
  * @param {Array} activeAlerts - Array of active Alert documents
  */
 function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts = []) {
-    const resilience = stationIntelligence?.resilienceScore ?? 79;
-    const resilienceStatus = stationIntelligence?.resilienceStatus ?? 'STABLE';
+    const resilience = stationIntelligence?.resilienceScore ?? 47;
+    const resilienceStatus = stationIntelligence?.resilienceStatus ?? 'VULNERABLE';
     const primaryAssetId = stationIntelligence?.primaryRiskAsset || 'DG-001';
-    const primaryRisk = stationIntelligence?.stationRisk || { level: 'HIGH', score: 0.58 };
+    const primaryRisk = stationIntelligence?.stationRisk || { level: 'HIGH', score: 0.57 };
     const cascadeAffected = stationIntelligence?.cascadeImpact || ['BAT-01', 'BAT-02', 'HVAC-01', 'HVAC-02', 'PUMP-01', 'COM-01'];
     const env = stationIntelligence?.environmental || { temperature: -30.5, condition: 'SEVERE COLD', stressFactor: 0.61, heatingDeltaPercent: 40 };
-    const energy = stationIntelligence?.energy || { currentGeneration: 491, estimatedDemand: 426, energyMargin: 65, safetyMarginPercent: 15.3 };
+    const energy = stationIntelligence?.energy || { currentGeneration: 492, estimatedDemand: 426, energyMargin: 66, safetyMarginPercent: 15.5 };
     const fuel = stationIntelligence?.fuel || { level: 73.0, remainingRuntimeDays: 19.2, consumptionRatePercentPerDay: 3.8 };
 
     // Baseline Situation
@@ -39,7 +39,7 @@ function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts 
         fuelLevel: fuel.level,
         fuelBurnRate: fuel.consumptionRatePercentPerDay,
         riskLevel: primaryRisk.level || 'HIGH',
-        failureProbability: Math.round((stationIntelligence?.assetsIntelligence?.find(a => a.assetId === primaryAssetId)?.failurePrediction?.probability || 0.58) * 100),
+        failureProbability: Math.round((stationIntelligence?.assetsIntelligence?.find(a => a.assetId === primaryAssetId)?.failurePrediction?.probability || 0.68) * 100),
         cascadeCount: cascadeAffected.length,
         cascadeAssets: cascadeAffected
     };

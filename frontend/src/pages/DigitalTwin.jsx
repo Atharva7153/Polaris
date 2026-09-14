@@ -174,14 +174,15 @@ export default function DigitalTwin() {
   const simulatedStationState = useMemo(() => {
     if (!stationIntel || !isSimulationMode) return null;
 
-    const baseResilience = stationIntel.resilienceScore || 75;
-    const baseMargin = stationIntel.energy?.energyMargin || 55;
-    const baseFuel = stationIntel.fuel?.remainingRuntimeDays || 19.2;
+    const isMtr = selectedStation?.code === 'MTR';
+    const baseResilience = stationIntel.resilienceScore ?? (isMtr ? 94 : 47);
+    const baseMargin = stationIntel.energy?.energyMargin ?? (isMtr ? 82 : 66);
+    const baseFuel = stationIntel.fuel?.remainingRuntimeDays ?? (isMtr ? 24.7 : 19.2);
 
     if (simulationScenario === 'DG_FAILURE') {
       return {
-        resilience: Math.max(15, baseResilience - 43),
-        resilienceDelta: -43,
+        resilience: Math.max(10, baseResilience - 35),
+        resilienceDelta: -35,
         energyMargin: baseMargin - 425, // Deficit
         marginDelta: -425,
         fuelDays: Number((baseFuel + 3.2).toFixed(1)), // Less generation burning fuel
@@ -191,8 +192,8 @@ export default function DigitalTwin() {
     } else {
       // LOAD_SURGE
       return {
-        resilience: Math.max(25, baseResilience - 28),
-        resilienceDelta: -28,
+        resilience: Math.max(15, baseResilience - 22),
+        resilienceDelta: -22,
         energyMargin: Math.max(-120, baseMargin - 150),
         marginDelta: -150,
         fuelDays: Number((baseFuel - 4.1).toFixed(1)),
@@ -200,7 +201,7 @@ export default function DigitalTwin() {
         threatNote: 'Thermal heating surge caused by -45°C polar blizzard overload.'
       };
     }
-  }, [stationIntel, isSimulationMode, simulationScenario, selectedAssetId]);
+  }, [stationIntel, isSimulationMode, simulationScenario, selectedAssetId, selectedStation]);
 
   // Determine an asset's visual state (Live vs Simulation, and Dependency role)
   const getAssetVisualState = (asset) => {
@@ -609,23 +610,23 @@ export default function DigitalTwin() {
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#F0F8FD', border: '1px solid #D8E7F0' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB' }}>GENERATION OUTPUT</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#12304A', margin: '4px 0' }}>
-                {stationIntel.energy?.currentGeneration || 480} kW
+                {stationIntel.energy?.currentGeneration ?? 492} kW
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Supplied by active diesel generator bus</div>
             </div>
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>CURRENT DEMAND</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#1E3448', margin: '4px 0' }}>
-                {stationIntel.energy?.estimatedDemand || 425} kW
+                {stationIntel.energy?.estimatedDemand ?? (selectedStation?.code === 'MTR' ? 410 : 426)} kW
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Combined habitat, science, and life support</div>
             </div>
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A' }}>SAFETY MARGIN</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#16A34A', margin: '4px 0' }}>
-                +{stationIntel.energy?.energyMargin || 55} kW
+                +{stationIntel.energy?.energyMargin ?? (selectedStation?.code === 'MTR' ? 82 : 66)} kW
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>{stationIntel.energy?.safetyMarginPercent || 12.9}% operational buffer</div>
+              <div style={{ fontSize: '12px', color: '#64748B' }}>{stationIntel.energy?.safetyMarginPercent ?? (selectedStation?.code === 'MTR' ? 20.0 : 15.5)}% operational buffer</div>
             </div>
           </div>
         </div>
@@ -641,21 +642,21 @@ export default function DigitalTwin() {
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#D97706' }}>PRIMARY RESERVOIR</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#12304A', margin: '4px 0' }}>
-                {stationIntel.fuel?.level || 73}%
+                {stationIntel.fuel?.level ?? (selectedStation?.code === 'MTR' ? 84.09 : 73.0)}%
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>Capacity: ~36,500 L arctic grade diesel</div>
+              <div style={{ fontSize: '12px', color: '#64748B' }}>Capacity: ~{selectedStation?.code === 'MTR' ? '50,400' : '36,500'} L arctic grade diesel</div>
             </div>
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>BURN RATE</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#1E3448', margin: '4px 0' }}>
-                {stationIntel.fuel?.consumptionRatePercentPerDay || 3.8}% / Day
+                {stationIntel.fuel?.consumptionRatePercentPerDay ?? (selectedStation?.code === 'MTR' ? 3.4 : 3.8)}% / Day
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Telemetry regression slope over 24h</div>
             </div>
             <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB' }}>AUTONOMOUS RUNWAY</div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: '#2563EB', margin: '4px 0' }}>
-                {stationIntel.fuel?.remainingRuntimeDays || 19.2} Days
+                {stationIntel.fuel?.remainingRuntimeDays ?? (selectedStation?.code === 'MTR' ? 24.7 : 19.2)} Days
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Projected until mandatory resupply</div>
             </div>
@@ -855,7 +856,7 @@ export default function DigitalTwin() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDetailPanelAsset(asset);
+                              setDetailPanelAsset({ ...asset, intelligence: intelMap[asset.assetId] });
                             }}
                             style={{
                               fontSize: '11px', fontWeight: 700, color: '#2563EB', background: 'none',
