@@ -8,6 +8,7 @@ import Assets from './pages/Assets';
 import DigitalTwin from './pages/DigitalTwin';
 import Alerts from './pages/Alerts';
 import Analytics from './pages/Analytics';
+import DecisionCenter from './pages/DecisionCenter';
 import Settings from './pages/Settings';
 import Telemetry from './pages/Telemetry';
 
@@ -30,7 +31,6 @@ const socket = io(backendUrl);
 function App() {
   useEffect(() => {
     const handleToast = (alert) => {
-      console.log('Received alert:created event in App.jsx', alert);
       toast.error(
         <div>
           <strong>New Operational Alert: {alert.assetName || alert.assetId}</strong><br/>
@@ -63,6 +63,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="decision-center" element={<DecisionCenter />} />
               <Route path="assets" element={<Assets />} />
               <Route path="telemetry" element={<Telemetry />} />
               <Route path="digital-twin" element={<DigitalTwin />} />

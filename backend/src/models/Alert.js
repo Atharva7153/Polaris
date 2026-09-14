@@ -12,10 +12,18 @@ const AlertSchema = new mongoose.Schema({
     message: String,
     explanation: String,
     affectedAssets: [String],
-    status: { type: String, enum: ['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED'], default: 'ACTIVE' },
+    status: { type: String, enum: ['ACTIVE', 'ACKNOWLEDGED', 'ACTION_PLANNED', 'RESOLVED'], default: 'ACTIVE' },
     metadata: Object,
     acknowledgedAt: Date,
+    actionPlannedAt: Date,
+    actionPlan: Object,
     resolvedAt: Date,
+    timelineEvents: [{
+        time: { type: Date, default: Date.now },
+        title: String,
+        description: String,
+        type: { type: String, default: 'info' }
+    }],
     timestamp: { type: Date, default: Date.now }
 });
 module.exports = mongoose.model('Alert', AlertSchema);

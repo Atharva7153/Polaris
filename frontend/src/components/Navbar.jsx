@@ -6,13 +6,14 @@ import client from '../api/client';
 import { socket } from '../App';
 
 const pageTitles = {
-  '/dashboard':    'Overview',
-  '/digital-twin': 'Digital Twin',
-  '/assets':       'Asset Management',
-  '/telemetry':    'Telemetry',
-  '/alerts':       'System Alerts',
-  '/analytics':    'Analytics',
-  '/settings':     'Settings',
+  '/dashboard':       'Overview',
+  '/decision-center': 'Operational Decision Center',
+  '/digital-twin':    'Digital Twin',
+  '/assets':          'Asset Management',
+  '/telemetry':       'Telemetry',
+  '/alerts':          'System Alerts',
+  '/analytics':       'Analytics',
+  '/settings':        'Settings',
 };
 
 const navbarStyle = {

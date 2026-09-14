@@ -28,6 +28,7 @@ app.use('/api/telemetry', require('./routes/telemetry'));
 app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/simulation', require('./routes/simulation'));
+app.use('/api/decision-center', require('./routes/decisionCenter'));
 
 const intelligenceService = require('./services/intelligenceService');
 app.get('/api/health', async (req, res) => {

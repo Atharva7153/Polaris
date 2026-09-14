@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Cpu, Database, Activity,
+  LayoutDashboard, Compass, Cpu, Database, Activity,
   ShieldAlert, BarChart3, Settings2, LogOut,
   Snowflake, User2, Radio
 } from 'lucide-react';
@@ -8,13 +8,14 @@ import { useStation } from '../contexts/StationContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
-  { name: 'Overview',     path: '/dashboard',    icon: LayoutDashboard },
-  { name: 'Digital Twin', path: '/digital-twin', icon: Cpu },
-  { name: 'Assets',       path: '/assets',       icon: Database },
-  { name: 'Telemetry',    path: '/telemetry',    icon: Activity },
-  { name: 'Alerts',       path: '/alerts',       icon: ShieldAlert },
-  { name: 'Analytics',    path: '/analytics',    icon: BarChart3 },
-  { name: 'Settings',     path: '/settings',     icon: Settings2 },
+  { name: 'Overview',        path: '/dashboard',       icon: LayoutDashboard },
+  { name: 'Decision Center', path: '/decision-center', icon: Compass },
+  { name: 'Digital Twin',    path: '/digital-twin',    icon: Cpu },
+  { name: 'Assets',          path: '/assets',          icon: Database },
+  { name: 'Telemetry',       path: '/telemetry',       icon: Activity },
+  { name: 'Alerts',          path: '/alerts',          icon: ShieldAlert },
+  { name: 'Analytics',       path: '/analytics',       icon: BarChart3 },
+  { name: 'Settings',        path: '/settings',        icon: Settings2 },
 ];
 
 const sidebarStyle = {

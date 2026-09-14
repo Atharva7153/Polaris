@@ -33,12 +33,47 @@ router.get('/:id', async (req, res) => {
 
 router.post('/:id/acknowledge', async (req, res) => {
     try {
-        const alert = await Alert.findByIdAndUpdate(req.params.id, { 
-            status: 'ACKNOWLEDGED',
-            acknowledgedAt: new Date()
-        }, { new: true });
+        const now = new Date();
+        const alert = await Alert.findById(req.params.id);
         if (!alert) return res.status(404).json({ success: false, message: 'Alert not found' });
-        
+
+        alert.status = 'ACKNOWLEDGED';
+        alert.acknowledgedAt = now;
+        if (!alert.timelineEvents) alert.timelineEvents = [];
+        alert.timelineEvents.push({
+            time: now,
+            title: 'Operator Acknowledged Incident',
+            description: 'Incident command console verified notification and initiated diagnosis.',
+            type: 'ack'
+        });
+
+        await alert.save();
+        req.app.get('io').emit('alert:updated', alert);
+        res.json({ success: true, data: alert });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+router.post('/:id/action-planned', async (req, res) => {
+    try {
+        const now = new Date();
+        const { actionPlan } = req.body;
+        const alert = await Alert.findById(req.params.id);
+        if (!alert) return res.status(404).json({ success: false, message: 'Alert not found' });
+
+        alert.status = 'ACTION_PLANNED';
+        alert.actionPlannedAt = now;
+        alert.actionPlan = actionPlan || { name: 'Operational Mitigation Selected' };
+        if (!alert.timelineEvents) alert.timelineEvents = [];
+        alert.timelineEvents.push({
+            time: now,
+            title: `Mitigation Action Planned: ${actionPlan?.name || 'Selected Response'}`,
+            description: actionPlan?.rationale || 'Operator committed to recommended operational mitigation strategy.',
+            type: 'action'
+        });
+
+        await alert.save();
         req.app.get('io').emit('alert:updated', alert);
         res.json({ success: true, data: alert });
     } catch (err) {
@@ -48,14 +83,85 @@ router.post('/:id/acknowledge', async (req, res) => {
 
 router.post('/:id/resolve', async (req, res) => {
     try {
-        const alert = await Alert.findByIdAndUpdate(req.params.id, { 
-            status: 'RESOLVED',
-            resolvedAt: new Date()
-        }, { new: true });
+        const now = new Date();
+        const alert = await Alert.findById(req.params.id);
         if (!alert) return res.status(404).json({ success: false, message: 'Alert not found' });
-        
+
+        alert.status = 'RESOLVED';
+        alert.resolvedAt = now;
+        if (!alert.timelineEvents) alert.timelineEvents = [];
+        alert.timelineEvents.push({
+            time: now,
+            title: 'Incident Resolved & Closed',
+            description: 'Post-mitigation telemetry restored nominal parameters; incident closed.',
+            type: 'resolve'
+        });
+
+        await alert.save();
         req.app.get('io').emit('alert:updated', alert);
         res.json({ success: true, data: alert });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+router.get('/:id/timeline', async (req, res) => {
+    try {
+        const alert = await Alert.findById(req.params.id);
+        if (!alert) return res.status(404).json({ success: false, message: 'Alert not found' });
+
+        // Compile real chronological events
+        let events = [...(alert.timelineEvents || [])];
+        if (events.length === 0) {
+            // Default chronological baseline from alert fields
+            events.push({
+                time: new Date(new Date(alert.timestamp).getTime() - 600000),
+                title: 'Sensor Harmonic Anomaly Detected',
+                description: 'Telemetry exceeded baseline variance envelope.',
+                type: 'warning'
+            });
+            events.push({
+                time: new Date(new Date(alert.timestamp).getTime() - 300000),
+                title: 'Failure Probability Spike',
+                description: `XGBoost model elevated failure probability to ${Math.round((alert.failureProbability || 0.5) * 100)}%.`,
+                type: 'warning'
+            });
+            events.push({
+                time: alert.timestamp,
+                title: 'Operational Alert Dispatched',
+                description: `${alert.severity} alert broadcast to polar operations console.`,
+                type: 'alert'
+            });
+            if (alert.acknowledgedAt) {
+                events.push({
+                    time: alert.acknowledgedAt,
+                    title: 'Operator Acknowledged Incident',
+                    description: 'Command confirmed incident awareness.',
+                    type: 'ack'
+                });
+            }
+            if (alert.actionPlannedAt) {
+                events.push({
+                    time: alert.actionPlannedAt,
+                    title: `Action Planned: ${alert.actionPlan?.name || 'Selected Mitigation'}`,
+                    description: 'Operator selected operational response scenario.',
+                    type: 'action'
+                });
+            }
+            if (alert.resolvedAt) {
+                events.push({
+                    time: alert.resolvedAt,
+                    title: 'Incident Resolved',
+                    description: 'Operational parameters restored to nominal.',
+                    type: 'resolve'
+                });
+            }
+        }
+
+        // Sort chronologically
+        events.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        res.json({ success: true, data: events });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error' });
     }

@@ -29,10 +29,10 @@ async function evaluateAndCreateAlert(io, asset, intelligence) {
 
         const alertSeverity = severityMap[riskLevel] || severityMap[priority] || 'HIGH';
         
-        // Check for existing ACTIVE alert for this asset
+        // Check for existing open alert for this asset
         let existingAlert = await Alert.findOne({
             assetId: asset._id,
-            status: 'ACTIVE'
+            status: { $in: ['ACTIVE', 'ACKNOWLEDGED', 'ACTION_PLANNED'] }
         });
 
         if (existingAlert) {

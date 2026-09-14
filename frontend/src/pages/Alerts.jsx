@@ -86,23 +86,29 @@ export default function Alerts() {
     if (selectedStation) fetchAlerts();
   }, [selectedStation]);
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, actionPlan = null) => {
     try {
-      const endpoint = status === 'ACKNOWLEDGED' ? 'acknowledge' : 'resolve';
-      const res = await client.post(`/alerts/${id}/${endpoint}`);
+      let endpoint = 'acknowledge';
+      if (status === 'RESOLVED') endpoint = 'resolve';
+      else if (status === 'ACTION_PLANNED') endpoint = 'action-planned';
+
+      const res = await client.post(`/alerts/${id}/${endpoint}`, actionPlan ? { actionPlan } : {});
       // Socket will broadcast the update, but we can also update locally for immediate feedback
       setAlerts(prev => prev.map(a => a._id === id ? res.data.data : a));
       if (selectedAlert && selectedAlert._id === id) {
         setSelectedAlert(res.data.data);
       }
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // KPIs
   const activeCount = alerts.filter(a => a.status === 'ACTIVE').length;
   const criticalCount = alerts.filter(a => a.status === 'ACTIVE' && a.severity === 'CRITICAL').length;
-  const highCount = alerts.filter(a => a.status === 'ACTIVE' && a.severity === 'HIGH').length;
+  const actionPlannedCount = alerts.filter(a => a.status === 'ACTION_PLANNED').length;
   const ackCount = alerts.filter(a => a.status === 'ACKNOWLEDGED').length;
+  const resolvedCount = alerts.filter(a => a.status === 'RESOLVED').length;
 
   const filteredAlerts = alerts.filter(a => {
     if (severityFilter !== 'All' && a.severity !== severityFilter) return false;
@@ -126,29 +132,30 @@ export default function Alerts() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
         {[
           { label: 'ACTIVE ALERTS', value: activeCount, color: '#12304A', bg: '#F8FAFC' },
           { label: 'CRITICAL', value: criticalCount, color: '#DC2626', bg: '#FEF2F2' },
-          { label: 'HIGH', value: highCount, color: '#D97706', bg: '#FFFBEB' },
+          { label: 'ACTION PLANNED', value: actionPlannedCount, color: '#0D9488', bg: '#F0FDFA' },
           { label: 'ACKNOWLEDGED', value: ackCount, color: '#2563EB', bg: '#EFF6FF' },
+          { label: 'RESOLVED', value: resolvedCount, color: '#16A34A', bg: '#F0FDF4' },
         ].map((kpi, idx) => (
           <div key={idx} style={{
             backgroundColor: '#FFFFFF', border: '1px solid #D8E7F0',
-            borderRadius: '12px', padding: '24px',
+            borderRadius: '12px', padding: '20px',
             boxShadow: '0 2px 8px rgba(18,48,74,0.04)',
           }}>
-            <div style={{ fontSize: '13px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
               {kpi.label}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
-                width: '48px', height: '48px', borderRadius: '12px',
+                width: '44px', height: '44px', borderRadius: '10px',
                 backgroundColor: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <ShieldAlert style={{ width: '24px', height: '24px', color: kpi.color }} />
+                <ShieldAlert style={{ width: '22px', height: '22px', color: kpi.color }} />
               </div>
-              <div style={{ fontSize: '36px', fontWeight: 800, color: kpi.color, lineHeight: 1 }}>
+              <div style={{ fontSize: '32px', fontWeight: 800, color: kpi.color, lineHeight: 1 }}>
                 {kpi.value}
               </div>
             </div>
@@ -186,7 +193,9 @@ export default function Alerts() {
             value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '14px', fontWeight: 500, outline: 'none' }}
           >
-            {['All', 'ACTIVE', 'ACKNOWLEDGED', 'RESOLVED'].map(o => <option key={o}>{o}</option>)}
+            {['All', 'ACTIVE', 'ACKNOWLEDGED', 'ACTION_PLANNED', 'RESOLVED'].map(o => (
+              <option key={o} value={o}>{o === 'All' ? 'All' : o.replace('_', ' ')}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -272,12 +281,24 @@ export default function Alerts() {
                       {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}<br/>
                       <span style={{ fontSize: '12px' }}>{new Date(alert.timestamp).toLocaleDateString()}</span>
                     </td>
-                    <td style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', fontSize: '14px', fontWeight: 800 }}>
+                    <td style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', fontSize: '13px', fontWeight: 800 }}>
                       <span style={{ 
                         color: alert.status === 'RESOLVED' ? '#16A34A' : 
-                               alert.status === 'ACKNOWLEDGED' ? '#2563EB' : '#DC2626'
+                               alert.status === 'ACKNOWLEDGED' ? '#2563EB' : 
+                               alert.status === 'ACTION_PLANNED' ? '#0D9488' : '#DC2626',
+                        backgroundColor: alert.status === 'RESOLVED' ? '#F0FDF4' : 
+                                         alert.status === 'ACKNOWLEDGED' ? '#EFF6FF' : 
+                                         alert.status === 'ACTION_PLANNED' ? '#F0FDFA' : '#FEF2F2',
+                        border: `1px solid ${
+                          alert.status === 'RESOLVED' ? '#BBF7D0' : 
+                          alert.status === 'ACKNOWLEDGED' ? '#BFDBFE' : 
+                          alert.status === 'ACTION_PLANNED' ? '#99F6E4' : '#FECACA'
+                        }`,
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        display: 'inline-block'
                       }}>
-                        {alert.status}
+                        {alert.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'right' }}>

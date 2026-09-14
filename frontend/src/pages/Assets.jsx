@@ -4,12 +4,23 @@ import client from '../api/client';
 import { useStation } from '../contexts/StationContext';
 import AssetDetailPanel from '../components/AssetDetailPanel';
 
-const STATUS_FILTERS = ['ALL', 'NORMAL', 'WARNING', 'CRITICAL'];
+const STATUS_FILTERS = ['ALL', 'ONLINE', 'DEGRADED', 'OFFLINE'];
 
 const statusStyle = {
-  NORMAL:   { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', leftColor: '#16A34A' },
-  WARNING:  { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', leftColor: '#D97706' },
-  CRITICAL: { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', leftColor: '#DC2626' },
+  ONLINE:      { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', leftColor: '#16A34A' },
+  DEGRADED:    { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', leftColor: '#D97706' },
+  OFFLINE:     { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', leftColor: '#DC2626' },
+  UNAVAILABLE: { color: '#64748B', bg: '#F8FAFC', border: '#E2E8F0', leftColor: '#94A3B8' },
+  NORMAL:      { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', leftColor: '#16A34A' },
+  WARNING:     { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', leftColor: '#D97706' },
+  CRITICAL:    { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', leftColor: '#DC2626' },
+};
+
+const normalizeOpStatus = (status) => {
+  if (status === 'NORMAL') return 'ONLINE';
+  if (status === 'WARNING') return 'DEGRADED';
+  if (status === 'CRITICAL') return 'OFFLINE';
+  return status || 'ONLINE';
 };
 
 export default function Assets() {
@@ -32,9 +43,10 @@ export default function Assets() {
   };
 
   const filtered = assets.filter(a => {
+    const op = normalizeOpStatus(a.status);
     const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                         a.assetId.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === 'ALL' || a.status === filter;
+    const matchFilter = filter === 'ALL' || op === filter || a.status === filter;
     return matchSearch && matchFilter;
   });
 
@@ -115,7 +127,8 @@ export default function Assets() {
           gap: '20px',
         }}>
           {filtered.map(asset => {
-            const s = statusStyle[asset.status] || statusStyle.NORMAL;
+            const opStatus = normalizeOpStatus(asset.status);
+            const s = statusStyle[opStatus] || statusStyle.ONLINE;
             return (
               <div
                 key={asset._id}
@@ -148,7 +161,7 @@ export default function Assets() {
                     color: s.color, backgroundColor: s.bg, border: `1px solid ${s.border}`,
                   }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: s.color }} />
-                    {asset.status}
+                    {opStatus}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

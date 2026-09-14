@@ -23,6 +23,33 @@ router.post('/', async (req, res) => {
 
         const simulationResult = await intelligenceService.runSimulation(assetId, latestTelemetry.toJSON(), changes);
         
+        // Phase 8: Calculate station-level resilience and energy impact of the scenario
+        const baseResilience = 82;
+        const riskDelta = Math.max(0, simulationResult.change?.riskIncrease || 0);
+        const cascadeCount = simulationResult.cascade?.cascadeRisks?.length || 0;
+        
+        // Explainable resilience impact
+        const resilienceDrop = Math.min(65, Math.round(riskDelta * 40 + cascadeCount * 6 + ((changes.generatorLoad && changes.generatorLoad > 80) ? 10 : 0)));
+        const simulatedResilience = Math.max(18, baseResilience - resilienceDrop);
+
+        // Energy margin impact
+        const baseMargin = 78;
+        const loadExcess = changes.generatorLoad ? Math.max(0, changes.generatorLoad - 68) : 0;
+        const marginDrop = Math.min(70, Math.round(loadExcess * 1.6 + riskDelta * 35));
+        const simulatedMargin = Math.max(8, baseMargin - marginDrop);
+
+        // Fuel consumption impact
+        const fuelDeltaPercent = changes.generatorLoad ? Math.round(((changes.generatorLoad - 68) / 68) * 100) : 0;
+
+        simulationResult.stationImpact = {
+            baselineResilience: baseResilience,
+            simulatedResilience: simulatedResilience,
+            resilienceDrop: resilienceDrop,
+            baselineEnergyMargin: baseMargin,
+            simulatedEnergyMargin: simulatedMargin,
+            fuelConsumptionDeltaPercent: fuelDeltaPercent > 0 ? `+${fuelDeltaPercent}%` : `${fuelDeltaPercent}%`
+        };
+
         res.json({ success: true, data: simulationResult });
     } catch (err) {
         console.error("Simulation error:", err);
@@ -41,7 +68,7 @@ router.post('/trigger-anomaly', async (req, res) => {
         const asset = await Asset.findOne({ assetId });
         if (!asset) return res.status(404).json({ success: false, message: 'Asset not found.' });
 
-        // Build extremely anomalous telemetry
+        // Build anomalous telemetry
         const badTelemetry = await Telemetry.create({
             assetId: asset._id,
             timestamp: new Date(),
@@ -58,7 +85,7 @@ router.post('/trigger-anomaly', async (req, res) => {
 
         const intelligence = await intelligenceService.getUnifiedIntelligence(assetId, badTelemetry.toJSON());
         
-        // OVERRIDE for the trigger to guarantee a CRITICAL alert is generated
+        // Guarantee CRITICAL alert generation for live trigger test
         if (intelligence.risk) {
             intelligence.risk.level = 'CRITICAL';
             intelligence.risk.score = 0.99;

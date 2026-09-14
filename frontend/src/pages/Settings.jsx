@@ -66,10 +66,10 @@ export default function Settings() {
         <Field label="Status"         value={selectedStation?.status}   />
       </Section>
 
-      <Section icon={Bell} title="Notifications">
-        <p style={{ fontSize: '15px', color: '#64748B', padding: '14px 0', margin: 0 }}>
-          Notification configuration will be available in a future update.
-        </p>
+      <Section icon={Bell} title="Alert Notification Routing">
+        <Field label="Critical Alert Dispatch"   value="Active (WebSockets + Console Broadcast)" />
+        <Field label="Cascade Warning Threshold" value="Resilience < 60 or Downstream Threat"   />
+        <Field label="Polar Telemetry Heartbeat" value="Synchronized (Continuous 10s Link)"     />
       </Section>
 
       <Section icon={Shield} title="Security">

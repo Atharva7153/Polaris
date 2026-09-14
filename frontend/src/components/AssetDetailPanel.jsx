@@ -263,29 +263,69 @@ export default function AssetDetailPanel({ asset, onClose }) {
 
                       {simResult && (
                           <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #E2E8F0' }}>
-                              <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748B', backgroundColor: '#F1F5F9', padding: '6px 12px', borderRadius: '6px', display: 'inline-block', marginBottom: '16px', letterSpacing: '0.05em' }}>
-                                SIMULATION — NO DATABASE CHANGES
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B', backgroundColor: '#F1F5F9', padding: '5px 10px', borderRadius: '6px', letterSpacing: '0.05em' }}>
+                                  SIMULATION — NO DATABASE CHANGES
+                                </div>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563EB' }}>
+                                  SCENARIO IMPACT
+                                </span>
                               </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                                  <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: '6px' }}>BASELINE</div>
-                                      <div style={{ fontSize: '20px', fontWeight: 800, color: riskColors[simResult.baseline.riskLevel] }}>{simResult.baseline.riskLevel}</div>
-                                      <div style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>Fail Prob: {Math.round(simResult.baseline.failureProbability * 100)}%</div>
+
+                              {/* Station-Level Resilience Impact */}
+                              {simResult.stationImpact && (
+                                <div style={{
+                                  backgroundColor: '#EFF6FF', borderRadius: '10px', padding: '16px',
+                                  border: '1px solid #BFDBFE', marginBottom: '16px'
+                                }}>
+                                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#1E3448', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Activity size={16} color="#2563EB" /> Station Resilience Impact
                                   </div>
-                                  <div style={{ backgroundColor: '#EFF6FF', padding: '16px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563EB', marginBottom: '6px' }}>SIMULATED</div>
-                                      <div style={{ fontSize: '20px', fontWeight: 800, color: riskColors[simResult.simulation.riskLevel] }}>{simResult.simulation.riskLevel}</div>
-                                      <div style={{ fontSize: '14px', color: '#2563EB', marginTop: '4px' }}>Fail Prob: {Math.round(simResult.simulation.failureProbability * 100)}%</div>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D8E7F0' }}>
+                                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Station Resilience</div>
+                                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E3448', marginTop: '2px' }}>
+                                        {simResult.stationImpact.baselineResilience} → <span style={{ color: '#DC2626' }}>{simResult.stationImpact.simulatedResilience}</span>
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: 700 }}>
+                                        -{simResult.stationImpact.resilienceDrop} pts
+                                      </div>
+                                    </div>
+
+                                    <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #D8E7F0' }}>
+                                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Energy Margin</div>
+                                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E3448', marginTop: '2px' }}>
+                                        {simResult.stationImpact.baselineEnergyMargin} kW → <span style={{ color: '#DC2626' }}>{simResult.stationImpact.simulatedEnergyMargin} kW</span>
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
+                                        Fuel Burn: {simResult.stationImpact.fuelConsumptionDeltaPercent}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Asset Level Risk Comparison */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                                  <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: '4px' }}>BASELINE ASSET RISK</div>
+                                      <div style={{ fontSize: '18px', fontWeight: 800, color: riskColors[simResult.baseline.riskLevel] }}>{simResult.baseline.riskLevel}</div>
+                                      <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>Fail Prob: {Math.round(simResult.baseline.failureProbability * 100)}%</div>
+                                  </div>
+                                  <div style={{ backgroundColor: '#EFF6FF', padding: '14px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', marginBottom: '4px' }}>SIMULATED ASSET RISK</div>
+                                      <div style={{ fontSize: '18px', fontWeight: 800, color: riskColors[simResult.simulation.riskLevel] }}>{simResult.simulation.riskLevel}</div>
+                                      <div style={{ fontSize: '12px', color: '#2563EB', marginTop: '2px' }}>Fail Prob: {Math.round(simResult.simulation.failureProbability * 100)}%</div>
                                   </div>
                               </div>
-                              <div style={{ fontSize: '15px', fontWeight: 600, color: '#1E3448', marginBottom: '16px', backgroundColor: '#FEF2F2', padding: '12px', borderRadius: '8px', border: '1px solid #FECACA', display: 'inline-block' }}>
-                                  Risk Increase: <span style={{ color: '#DC2626', fontWeight: 800 }}>+{Math.round(simResult.change.riskIncrease * 100)}%</span>
+                              <div style={{ fontSize: '14px', fontWeight: 600, color: '#1E3448', marginBottom: '14px', backgroundColor: '#FEF2F2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FECACA', display: 'inline-block' }}>
+                                  Asset Risk Delta: <span style={{ color: '#DC2626', fontWeight: 800 }}>+{Math.round(simResult.change.riskIncrease * 100)}%</span>
                               </div>
                               {simResult.cascade?.cascadeRisks?.length > 0 && (
-                                  <div style={{ fontSize: '15px', color: '#64748B', backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                                      <strong style={{ color: '#1E3448', display: 'block', marginBottom: '8px' }}>Cascade Impact:</strong>
+                                  <div style={{ fontSize: '14px', color: '#64748B', backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                      <strong style={{ color: '#1E3448', display: 'block', marginBottom: '6px' }}>Downstream Cascade Risk:</strong>
                                       {simResult.cascade.cascadeRisks.map(r => (
-                                          <div key={r.assetId} style={{ marginTop: '6px', paddingLeft: '12px', borderLeft: '3px solid #CBD5E1', fontSize: '15px' }}>
+                                          <div key={r.assetId} style={{ marginTop: '4px', paddingLeft: '10px', borderLeft: '3px solid #CBD5E1', fontSize: '13px' }}>
                                               {r.assetId} → <span style={{ color: riskColors[r.level], fontWeight: 800 }}>{r.level}</span>
                                           </div>
                                       ))}

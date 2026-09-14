@@ -2,7 +2,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+const getMlUrl = () => process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const TIMEOUT_MS = 8000; // 8 second timeout
 
 async function getUnifiedIntelligence(assetId, telemetryData) {
@@ -18,7 +18,7 @@ async function getUnifiedIntelligence(assetId, telemetryData) {
             batteryVoltage: telemetryData.batteryVoltage || 0
         };
 
-        const response = await axios.post(`${ML_SERVICE_URL}/unified-intelligence`, payload, {
+        const response = await axios.post(`${getMlUrl()}/unified-intelligence`, payload, {
             timeout: TIMEOUT_MS
         });
         
@@ -49,7 +49,7 @@ async function runSimulation(assetId, baselineTelemetry, changes) {
             changes: changes
         };
 
-        const response = await axios.post(`${ML_SERVICE_URL}/simulation`, payload, {
+        const response = await axios.post(`${getMlUrl()}/simulation`, payload, {
             timeout: TIMEOUT_MS
         });
         
@@ -65,7 +65,7 @@ async function runSimulation(assetId, baselineTelemetry, changes) {
 
 async function getHealth() {
     try {
-        const response = await axios.get(`${ML_SERVICE_URL}/health`, { timeout: 3000 });
+        const response = await axios.get(`${getMlUrl()}/health`, { timeout: 3000 });
         return response.data;
     } catch (error) {
         console.error(`[ML] Health check failed:`, error.message);

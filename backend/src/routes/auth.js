@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'supersecret', { expiresIn: '1d' });
         
         res.cookie('token', token, { httpOnly: true, maxAge: 86400000 });
-        res.json({ success: true, data: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        res.json({ success: true, token, data: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error' });
     }

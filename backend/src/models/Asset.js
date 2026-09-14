@@ -4,7 +4,7 @@ const AssetSchema = new mongoose.Schema({
     name: String,
     assetId: String,
     type: String,
-    status: { type: String, enum: ['NORMAL', 'WARNING', 'CRITICAL', 'OFFLINE'], default: 'NORMAL' },
+    status: { type: String, enum: ['ONLINE', 'DEGRADED', 'OFFLINE', 'UNAVAILABLE', 'NORMAL', 'WARNING', 'CRITICAL'], default: 'ONLINE' },
     criticality: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], default: 'MEDIUM' },
     specifications: Object
 }, { timestamps: true });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { X, ShieldAlert, Brain, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, ShieldAlert, Brain, Activity, Compass } from 'lucide-react';
 import client from '../api/client';
 
 export default function AlertDetailDrawer({ alert, onClose, onUpdateStatus }) {
+  const navigate = useNavigate();
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState(alert?.explanation || '');
   const [explainError, setExplainError] = useState(null);
@@ -203,36 +205,70 @@ export default function AlertDetailDrawer({ alert, onClose, onUpdateStatus }) {
         </div>
 
         <div style={{
-          padding: '24px 32px', borderTop: '1px solid #D8E7F0',
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px',
+          padding: '20px 28px', borderTop: '1px solid #D8E7F0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
           backgroundColor: '#F8FAFC'
         }}>
-          {alert.status === 'ACTIVE' && (
+          <div>
             <button
-              onClick={() => onUpdateStatus(alert._id, 'ACKNOWLEDGED')}
+              onClick={() => {
+                onClose();
+                navigate(`/decision-center?alertId=${alert._id}`);
+              }}
               style={{
-                fontSize: '15px', fontWeight: 600, padding: '12px 24px',
+                fontSize: '14px', fontWeight: 700, padding: '10px 18px',
                 borderRadius: '8px', cursor: 'pointer',
-                backgroundColor: '#FFFFFF', color: '#2563EB',
-                border: '1px solid #BFDBFE'
+                backgroundColor: '#2563EB', color: '#FFFFFF',
+                border: 'none', display: 'flex', alignItems: 'center', gap: '6px'
               }}
             >
-              Acknowledge Alert
+              <Compass size={16} /> View Decision Center
             </button>
-          )}
-          {alert.status !== 'RESOLVED' && (
-            <button
-              onClick={() => onUpdateStatus(alert._id, 'RESOLVED')}
-              style={{
-                fontSize: '15px', fontWeight: 600, padding: '12px 24px',
-                borderRadius: '8px', cursor: 'pointer',
-                backgroundColor: '#16A34A', color: '#FFFFFF',
-                border: 'none'
-              }}
-            >
-              Resolve Alert
-            </button>
-          )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {alert.status === 'ACTIVE' && (
+              <button
+                onClick={() => onUpdateStatus(alert._id, 'ACKNOWLEDGED')}
+                style={{
+                  fontSize: '13px', fontWeight: 600, padding: '10px 16px',
+                  borderRadius: '8px', cursor: 'pointer',
+                  backgroundColor: '#FFFFFF', color: '#2563EB',
+                  border: '1px solid #BFDBFE'
+                }}
+              >
+                Acknowledge
+              </button>
+            )}
+
+            {(alert.status === 'ACTIVE' || alert.status === 'ACKNOWLEDGED') && (
+              <button
+                onClick={() => onUpdateStatus(alert._id, 'ACTION_PLANNED')}
+                style={{
+                  fontSize: '13px', fontWeight: 600, padding: '10px 16px',
+                  borderRadius: '8px', cursor: 'pointer',
+                  backgroundColor: '#EFF6FF', color: '#2563EB',
+                  border: '1px solid #BFDBFE'
+                }}
+              >
+                Mark Action Planned
+              </button>
+            )}
+
+            {alert.status !== 'RESOLVED' && (
+              <button
+                onClick={() => onUpdateStatus(alert._id, 'RESOLVED')}
+                style={{
+                  fontSize: '13px', fontWeight: 600, padding: '10px 16px',
+                  borderRadius: '8px', cursor: 'pointer',
+                  backgroundColor: '#16A34A', color: '#FFFFFF',
+                  border: 'none'
+                }}
+              >
+                Resolve Alert
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </>
