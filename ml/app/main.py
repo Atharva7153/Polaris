@@ -45,3 +45,14 @@ def health_check():
         },
         "groq": "configured" if os.getenv("GROQ_API_KEY") else "not configured"
     }
+
+@app.get("/ping")
+def ping():
+    import time
+    return {
+        "status": "pong",
+        "service": "ml-service",
+        "timestamp": time.time(),
+        "message": "Python FastAPI ML engine responsive"
+    }
+

@@ -31,12 +31,63 @@ app.use('/api/simulation', require('./routes/simulation'));
 app.use('/api/decision-center', require('./routes/decisionCenter'));
 
 const intelligenceService = require('./services/intelligenceService');
+const axios = require('axios');
+
 app.get('/api/health', async (req, res) => {
     const mlHealth = await intelligenceService.getHealth();
     res.json({
         backend: "healthy",
         database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
         ml: mlHealth.status === "UNAVAILABLE" ? "unavailable" : "connected"
+    });
+});
+
+/**
+ * GET /api/ping
+ * Returns backend pong, and tests roundtrip latency to ML service and MongoDB.
+ */
+app.get('/api/ping', async (req, res) => {
+    const start = Date.now();
+
+    // 1. Measure ML Service Ping & Latency
+    let mlPing = { status: "offline", latencyMs: null };
+    try {
+        const mlStart = Date.now();
+        const mlUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+        const mlRes = await axios.get(`${mlUrl}/ping`, { timeout: 2000 });
+        mlPing = {
+            status: mlRes.data?.status || 'pong',
+            latencyMs: Date.now() - mlStart,
+            message: mlRes.data?.message || 'ML service responsive'
+        };
+    } catch (e) {
+        mlPing = { status: "offline", error: e.message };
+    }
+
+    // 2. Measure Database Ping & Latency
+    let dbPing = { status: "disconnected", latencyMs: null };
+    try {
+        const dbStart = Date.now();
+        if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+            await mongoose.connection.db.admin().ping();
+            dbPing = {
+                status: "pong",
+                latencyMs: Date.now() - dbStart
+            };
+        }
+    } catch (e) {
+        dbPing = { status: "error", error: e.message };
+    }
+
+    res.json({
+        status: "pong",
+        service: "backend",
+        timestamp: Date.now(),
+        latencyMs: Date.now() - start,
+        dependencies: {
+            ml: mlPing,
+            database: dbPing
+        }
     });
 });
 
@@ -56,6 +107,17 @@ app.set('io', io);
 
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
+
+    // Socket.IO Ping-Pong handler
+    socket.on('ping', (clientData) => {
+        socket.emit('pong', {
+            status: 'pong',
+            serverTime: Date.now(),
+            clientSentTime: clientData?.timestamp,
+            latencyMs: clientData?.timestamp ? (Date.now() - clientData.timestamp) : 0
+        });
+    });
+
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
     });

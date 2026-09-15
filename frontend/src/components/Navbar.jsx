@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Bell, MapPin, ChevronDown } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, Zap, Activity } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { socket } from '../App';
+import AnomalyTriggerModal from './AnomalyTriggerModal';
 
 const pageTitles = {
   '/dashboard':       'Overview',
@@ -54,6 +55,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeAlertCount, setActiveAlertCount] = useState(0);
+  const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
 
   const title = pageTitles[location.pathname] || 'POLARIS';
 
@@ -141,6 +143,40 @@ export default function Navbar() {
           </span>
         </div>
 
+        {/* Live Fault / Anomaly Simulator Button */}
+        <button
+          onClick={() => setIsAnomalyModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 14px', borderRadius: '10px',
+            backgroundColor: '#FFFBEB', border: '1px solid #FDE68A',
+            color: '#B45309', fontSize: '13px', fontWeight: 700,
+            cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Open Fault Injection & Anomaly Testing Console"
+        >
+          <Zap style={{ width: '16px', height: '16px', color: '#D97706' }} />
+          <span>Fault Simulator</span>
+        </button>
+
+        {/* Live Ping-Pong Latency Monitor Button */}
+        <button
+          onClick={() => navigate('/settings')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 12px', borderRadius: '10px',
+            backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0',
+            color: '#166534', fontSize: '13px', fontWeight: 700,
+            cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Open Ping-Pong Heartbeat & Latency Monitor in Settings"
+        >
+          <Activity style={{ width: '15px', height: '15px', color: '#16A34A' }} />
+          <span>Ping Pong</span>
+        </button>
+
         {/* Bell */}
         <button
           onClick={() => navigate('/alerts')}
@@ -170,6 +206,12 @@ export default function Navbar() {
           )}
         </button>
       </div>
+
+      <AnomalyTriggerModal
+        isOpen={isAnomalyModalOpen}
+        onClose={() => setIsAnomalyModalOpen(false)}
+        activeStation={selectedStation}
+      />
     </header>
   );
 }

@@ -4,11 +4,13 @@ import { useStation } from '../contexts/StationContext';
 import client from '../api/client';
 import { socket } from '../App';
 import AssetDetailPanel from '../components/AssetDetailPanel';
+import TopologyGraph from '../components/TopologyGraph';
+import AnomalyTriggerModal from '../components/AnomalyTriggerModal';
 import {
   Zap, Battery, Wind, Fuel, Activity, Radio, Home, CloudRain,
   ShieldAlert, AlertTriangle, RefreshCw,
   Compass, ArrowRight, Layers, Sliders, ChevronRight,
-  Cpu, Thermometer
+  Cpu, Thermometer, GitFork
 } from 'lucide-react';
 
 const cardStyle = {
@@ -51,6 +53,7 @@ export default function DigitalTwin() {
   // Simulation Overlay Mode (Part N, O)
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [simulationScenario, setSimulationScenario] = useState('DG_FAILURE'); // 'DG_FAILURE' | 'LOAD_SURGE'
+  const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
 
   useEffect(() => {
     if (selectedStation) {
@@ -427,6 +430,7 @@ export default function DigitalTwin() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
             {[
               { id: 'schematic', label: '2D Schematic', icon: Layers },
+              { id: 'topology', label: 'Dependency Graph', icon: GitFork },
               { id: 'energy', label: 'Energy Flow', icon: Zap },
               { id: 'fuel', label: 'Fuel Flow', icon: Fuel },
               { id: 'environment', label: 'Weather Stress', icon: CloudRain }
@@ -473,6 +477,21 @@ export default function DigitalTwin() {
 
           {/* What-If & Reset Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Live Fault Injection Shortcut */}
+            <button
+              onClick={() => setIsAnomalyModalOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '7px 12px', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 700,
+                backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A'
+              }}
+              title="Open Live Fault Injection & Anomaly Testing Console"
+            >
+              <Zap size={14} color="#D97706" />
+              Fault Simulator
+            </button>
+
             <span style={{
               fontSize: '11px', fontWeight: 700, padding: '5px 9px', borderRadius: '6px',
               backgroundColor: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0',
@@ -696,8 +715,51 @@ export default function DigitalTwin() {
         </div>
       )}
 
-      {/* 5. 2D OPERATIONAL STATION SCHEMATIC (Parts D, E, F, G, H) */}
-      <div style={{ ...cardStyle, padding: '24px' }}>
+      {/* 5. INTERACTIVE TOPOLOGY GRAPH OR 2D OPERATIONAL SCHEMATIC */}
+      {activeTab === 'topology' ? (
+        <div style={{ ...cardStyle, padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <GitFork size={20} color="#2563EB" />
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1E3448', margin: 0 }}>
+                  Station Equipment & Electrical Dependency Graph
+                </h2>
+              </div>
+              <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0' }}>
+                Interactive directed topology showing physical equipment dependencies and active cascade failure propagation paths. Click any node to inspect telemetry.
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => setIsAnomalyModalOpen(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: 700,
+                  backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A'
+                }}
+              >
+                <Zap size={13} color="#D97706" />
+                Fault Simulator
+              </button>
+            </div>
+          </div>
+
+          <TopologyGraph
+            assets={assets}
+            intelligence={intelMap}
+            dependencies={dependencies}
+            selectedAssetId={selectedAssetId}
+            onSelectAsset={(asset) => {
+              setSelectedAssetId(asset.assetId);
+              setDetailPanelAsset({ ...asset, intelligence: intelMap[asset.assetId] });
+            }}
+          />
+        </div>
+      ) : (
+        <div style={{ ...cardStyle, padding: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -875,6 +937,7 @@ export default function DigitalTwin() {
           })}
         </div>
       </div>
+      )}
 
       {/* 6. ROOT CAUSE & CASCADE IMPACT COCKPIT (Part M, H) */}
       {selectedAssetDoc && (
@@ -1011,6 +1074,14 @@ export default function DigitalTwin() {
           onClose={() => setDetailPanelAsset(null)}
         />
       )}
+
+      {/* 8. LIVE ANOMALY TESTING CONSOLE MODAL */}
+      <AnomalyTriggerModal
+        isOpen={isAnomalyModalOpen}
+        onClose={() => setIsAnomalyModalOpen(false)}
+        activeStation={selectedStation}
+        onTriggerSuccess={() => loadStationData(true)}
+      />
 
     </div>
   );

@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useStation } from '../contexts/StationContext';
-import { User2, MapPin, Bell, Shield } from 'lucide-react';
+import { User2, MapPin, Bell, Shield, Activity } from 'lucide-react';
+import PingPongMonitor from '../components/PingPongMonitor';
 
 const sectionStyle = {
   backgroundColor: '#FFFFFF',
@@ -44,15 +45,18 @@ export default function Settings() {
   const { selectedStation } = useStation();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '820px' }}>
       <div>
         <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#12304A', margin: '0 0 6px' }}>
-          Settings
+          Settings & Diagnostics
         </h1>
         <p style={{ fontSize: '15px', color: '#64748B', margin: 0 }}>
-          System configuration and account management
+          System configuration, live service connectivity, and heartbeat latency diagnostics
         </p>
       </div>
+
+      {/* Interactive Ping-Pong Point */}
+      <PingPongMonitor />
 
       <Section icon={User2} title="Account">
         <Field label="Name"  value={user?.name}  />
