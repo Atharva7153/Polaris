@@ -26,6 +26,16 @@ const MAITRI_DEPENDENCIES = {
     "MTR-BAT-01": ["MTR-HVAC-01"],
 };
 
+// Maitri-II (MTR2) Canonical Dependency Graph (MoES 2029 Polar Microgrid Blueprint)
+const MAITRI_2_DEPENDENCIES = {
+    "M2-WIND-01": ["M2-BESS-01"],
+    "M2-SOLAR-01": ["M2-BESS-01"],
+    "M2-H2-01": ["M2-BESS-01"],
+    "M2-BESS-01": ["M2-HVAC-01", "M2-PUMP-01", "M2-COM-01", "M2-LAB-01"],
+    "M2-HVAC-01": ["M2-HAB-01"],
+    "M2-PUMP-01": ["M2-HAB-01", "M2-LAB-01"]
+};
+
 // Logical Station Zones for 2D Operational Digital Twin Schematic
 const STATION_ZONES = [
     { id: 'POWER_GENERATION', name: 'Power Generation Complex', icon: 'Zap' },
@@ -42,6 +52,7 @@ const STATION_ZONES = [
  * Returns raw adjacency list for the specified station code.
  */
 function getGraphByStation(stationCode = 'BHR') {
+    if (stationCode === 'MTR2') return MAITRI_2_DEPENDENCIES;
     return stationCode === 'MTR' ? MAITRI_DEPENDENCIES : BHARATI_DEPENDENCIES;
 }
 
@@ -85,10 +96,10 @@ function assignAssetToZone(asset) {
     const type = (asset.type || '').toLowerCase();
     const name = (asset.name || '').toLowerCase();
 
-    if (id.includes('DG') || type.includes('generator')) {
+    if (id.includes('DG') || id.includes('WIND') || id.includes('SOLAR') || id.includes('H2') || type.includes('generator') || type.includes('turbine')) {
         return 'POWER_GENERATION';
     }
-    if (id.includes('BAT') || type.includes('battery')) {
+    if (id.includes('BAT') || id.includes('BESS') || type.includes('battery') || type.includes('storage')) {
         return 'ENERGY_STORAGE';
     }
     if (id.includes('FUEL') || type.includes('fuel')) {
@@ -106,8 +117,11 @@ function assignAssetToZone(asset) {
     if (id.includes('COM') || type.includes('communication') || type.includes('uplink') || type.includes('radio')) {
         return 'COMMUNICATIONS';
     }
-    if (id.includes('ENV') || type.includes('environmental') || type.includes('weather') || type.includes('sensor')) {
+    if (id.includes('ENV') || id.includes('AWS') || type.includes('environmental') || type.includes('weather') || type.includes('sensor')) {
         return 'METEOROLOGY';
+    }
+    if (id.includes('HAB') || id.includes('LAB') || name.includes('hab') || name.includes('lab')) {
+        return 'HABITATION';
     }
     return 'CRITICAL_FACILITIES';
 }

@@ -35,8 +35,13 @@ def predict_failure(telemetry_dict: dict) -> dict:
     elif prob > 0.2:
         risk_level = "MEDIUM"
 
+    # Calibrated confidence derived from posterior probability margin (distance from 0.5 classification boundary)
+    prob_float = float(prob)
+    prob_margin = abs(prob_float - 0.5)
+    confidence = round(min(0.99, max(0.60, 0.50 + prob_margin * 0.98)), 2)
+
     return {
-        "probability": round(float(prob), 2),
-        "confidence": 0.88, # static confidence or derived from prob margin
+        "probability": round(prob_float, 2),
+        "confidence": confidence,
         "riskLevel": risk_level
     }

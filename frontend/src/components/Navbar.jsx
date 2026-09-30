@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Bell, MapPin, ChevronDown, Zap, Activity } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, Zap, Activity, Radio, WifiOff } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { socket } from '../App';
 import AnomalyTriggerModal from './AnomalyTriggerModal';
+import SatcomEdgeModal from './SatcomEdgeModal';
+import { toast } from 'react-hot-toast';
 
 const pageTitles = {
   '/dashboard':       'Overview',
@@ -56,6 +58,38 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [activeAlertCount, setActiveAlertCount] = useState(0);
   const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
+  const [isSatcomModalOpen, setIsSatcomModalOpen] = useState(false);
+  const [isBlackout, setIsBlackout] = useState(false);
+  const [bufferedCount, setBufferedCount] = useState(0);
+
+  // Increment buffered telemetry frames when in polar storm blackout
+  useEffect(() => {
+    let timer;
+    if (isBlackout) {
+      timer = setInterval(() => {
+        setBufferedCount(prev => prev + 1);
+      }, 4000);
+    }
+    return () => clearInterval(timer);
+  }, [isBlackout]);
+
+  const handleToggleBlackout = () => {
+    if (!isBlackout) {
+      setIsBlackout(true);
+      toast.error('⚠️ Polar Storm SATCOM Blackout Active: Ku-band link lost. Station transitioned to local Store-and-Forward Edge Mode.', {
+        duration: 5000,
+        style: { border: '1px solid #FECACA', backgroundColor: '#FEF2F2', color: '#991B1B', fontWeight: 700 }
+      });
+    } else {
+      setIsBlackout(false);
+      const count = bufferedCount;
+      setBufferedCount(0);
+      toast.success(`✓ SATCOM Link Restored: Flushed ${count} buffered telemetry frames to NCPOR Goa Central Terminal.`, {
+        duration: 5000,
+        style: { border: '1px solid #BBF7D0', backgroundColor: '#F0FDF4', color: '#166534', fontWeight: 700 }
+      });
+    }
+  };
 
   const title = pageTitles[location.pathname] || 'POLARIS';
 
@@ -143,6 +177,25 @@ export default function Navbar() {
           </span>
         </div>
 
+        {/* Polar SATCOM Link & Edge Mode Button */}
+        <button
+          onClick={() => setIsSatcomModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px',
+            backgroundColor: isBlackout ? '#FFFBEB' : '#F0F9FF',
+            border: `1px solid ${isBlackout ? '#FDE68A' : '#BAE6FD'}`,
+            color: isBlackout ? '#B45309' : '#0369A1',
+            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+            transition: 'all 0.2s ease'
+          }}
+          title="Inspect Polar Satellite Uplink & Local Edge Server Status"
+        >
+          {isBlackout ? <WifiOff size={15} color="#DC2626" /> : <Radio size={15} color="#0284C7" />}
+          <span>
+            {isBlackout ? `EDGE MODE (${bufferedCount} queued)` : 'SATCOM 640ms'}
+          </span>
+        </button>
+
         {/* Live Fault / Anomaly Simulator Button */}
         <button
           onClick={() => setIsAnomalyModalOpen(true)}
@@ -211,6 +264,14 @@ export default function Navbar() {
         isOpen={isAnomalyModalOpen}
         onClose={() => setIsAnomalyModalOpen(false)}
         activeStation={selectedStation}
+      />
+
+      <SatcomEdgeModal
+        isOpen={isSatcomModalOpen}
+        onClose={() => setIsSatcomModalOpen(false)}
+        isBlackout={isBlackout}
+        onToggleBlackout={handleToggleBlackout}
+        bufferedCount={bufferedCount}
       />
     </header>
   );

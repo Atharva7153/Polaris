@@ -2,10 +2,27 @@
 
 # A simple MVP dependency graph mapping parent assets to dependent downstream assets
 ASSET_DEPENDENCIES = {
+    # Bharati
     "FUEL-01": ["DG-001", "DG-002"],
     "DG-001": ["BAT-01", "BAT-02", "HVAC-01", "HVAC-02", "PUMP-01", "COM-01"],
     "DG-002": ["BAT-03", "HVAC-03", "PUMP-02"],
-    "BAT-01": ["COM-01"]
+    "BAT-01": ["COM-01"],
+    "BAT-02": ["HVAC-02"],
+    "PUMP-01": ["DG-001"],
+    
+    # Maitri
+    "MTR-FUEL-01": ["MTR-DG-01", "MTR-DG-02"],
+    "MTR-DG-01": ["MTR-BAT-01", "MTR-HVAC-01", "MTR-PUMP-01"],
+    "MTR-DG-02": ["MTR-BAT-01", "MTR-HVAC-01"],
+    "MTR-BAT-01": ["MTR-HVAC-01"],
+
+    # Maitri-II
+    "M2-WIND-01": ["M2-BESS-01"],
+    "M2-SOLAR-01": ["M2-BESS-01"],
+    "M2-H2-01": ["M2-BESS-01"],
+    "M2-BESS-01": ["M2-HVAC-01", "M2-PUMP-01", "M2-COM-01", "M2-LAB-01"],
+    "M2-HVAC-01": ["M2-HAB-01"],
+    "M2-PUMP-01": ["M2-HAB-01", "M2-LAB-01"]
 }
 
 # Criticality weights for the station-level risk calculation

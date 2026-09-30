@@ -11,6 +11,7 @@ const fuelService = require('../services/fuelService');
 const resilienceService = require('../services/resilienceService');
 const trendService = require('../services/trendService');
 const dependencyService = require('../services/dependencyService');
+const logisticsService = require('../services/logisticsService');
 
 router.get('/', async (req, res) => {
     try {
@@ -149,6 +150,43 @@ router.get('/:stationId/cascade/:assetId', async (req, res) => {
     }
 });
 
+// Phase 11: Remote Logistics, Spare Parts Inventory, and Vessel Resupply Tracking
+router.get('/:stationId/logistics', async (req, res) => {
+    try {
+        const station = await Station.findById(req.params.stationId);
+        if (!station) return res.status(404).json({ success: false, message: 'Station not found' });
+
+        const fuelAsset = await Asset.findOne({ stationId: station._id, type: { $regex: /fuel/i } });
+        let fuelDays = 19.2;
+        if (fuelAsset) {
+            const fuelTel = await Telemetry.findOne({ assetId: fuelAsset._id }).sort({ timestamp: -1 });
+            if (fuelTel) {
+                const fuelData = fuelService.evaluateFuel(fuelTel, [], 0.5);
+                fuelDays = fuelData.remainingRuntimeDays;
+            }
+        }
+
+        const logisticsData = logisticsService.evaluateLogistics(station.code, fuelDays);
+        res.json({ success: true, data: logisticsData });
+    } catch (err) {
+        console.error("Logistics fetch error:", err);
+        res.status(500).json({ success: false, message: 'Server error fetching logistics' });
+    }
+});
+
+router.get('/:stationId/assets/:assetId/spares', async (req, res) => {
+    try {
+        const station = await Station.findById(req.params.stationId);
+        if (!station) return res.status(404).json({ success: false, message: 'Station not found' });
+
+        const spares = logisticsService.getSparesForAsset(station.code, req.params.assetId);
+        res.json({ success: true, data: spares });
+    } catch (err) {
+        console.error("Asset spares error:", err);
+        res.status(500).json({ success: false, message: 'Server error fetching asset spares' });
+    }
+});
+
 // Phase 8: Unified Station Operations & Resilience Intelligence
 router.get('/:stationId/intelligence', async (req, res) => {
     try {
@@ -249,6 +287,9 @@ router.get('/:stationId/intelligence', async (req, res) => {
             environmentalScore: envData.environmentalScore
         });
 
+        // 6b. Remote Logistics & Spares Intelligence
+        const logisticsData = logisticsService.evaluateLogistics(station.code, fuelData.remainingRuntimeDays);
+
         // 7. Root Risk & Operational Action Analysis
         const primaryAssetId = mlAvailable ? (highestRiskAsset?.assetId || (dg01 ? dg01.assetId : 'DG-001')) : 'N/A';
         const primaryAssetDoc = assets.find(a => a.assetId === primaryAssetId);
@@ -295,6 +336,7 @@ router.get('/:stationId/intelligence', async (req, res) => {
                 environmental: envData,
                 energy: energyData,
                 fuel: fuelData,
+                logistics: logisticsData,
 
                 activeAlertsCount: activeAlerts.length,
                 activeAlerts: activeAlerts,

@@ -19,16 +19,19 @@ function ProtectedRoute({ children }) {
     return children;
 }
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import SplashScreen from './components/SplashScreen';
 import { Toaster, toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
 
-// Initialize socket outside component so it persists
-// VITE_API_URL includes '/api', but Socket.IO needs the root URL
-const backendUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '');
+// VITE_API_URL can now be the root URL directly from Render
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const backendUrl = rawApiUrl.replace(/\/api$/, ''); // Strip /api if it was manually included
 const socket = io(backendUrl);
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     const handleToast = (alert) => {
       toast.error(
@@ -50,6 +53,7 @@ function App() {
   return (
     <AuthProvider>
       <StationProvider>
+        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
         <Router>
           <Toaster 
             position="top-right" 

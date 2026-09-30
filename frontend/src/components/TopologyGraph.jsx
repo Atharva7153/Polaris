@@ -49,6 +49,26 @@ const maitriLayout = {
   'MTR-ENV-01':  { x: 320, y: 410 },
 };
 
+const maitri2Layout = {
+  // Tier 0: Power Generation
+  'M2-WIND-01': { x: 200, y: 30 },
+  'M2-SOLAR-01': { x: 400, y: 30 },
+  'M2-H2-01': { x: 600, y: 30 },
+  
+  // Tier 1: Energy Storage
+  'M2-BESS-01': { x: 400, y: 150 },
+
+  // Tier 2: Distribution
+  'M2-HVAC-01': { x: 250, y: 280 },
+  'M2-PUMP-01': { x: 400, y: 280 },
+  'M2-COM-01': { x: 550, y: 280 },
+  
+  // Tier 3: Consumers (Weather)
+  'M2-AWS-01': { x: 400, y: 410 },
+  'M2-HAB-01': { x: 250, y: 410 },
+  'M2-LAB-01': { x: 550, y: 410 }
+};
+
 const getRiskColor = (level) => {
   if (level === 'CRITICAL') return '#DC2626';
   if (level === 'HIGH') return '#EA580C';
@@ -82,7 +102,8 @@ export default function TopologyGraph({
   onSelectAsset = () => {}
 }) {
   const isMaitri = assets.some(a => a.assetId?.startsWith('MTR'));
-  const layoutMap = isMaitri ? maitriLayout : bharatiLayout;
+  const isMaitri2 = assets.some(a => a.assetId?.startsWith('M2-'));
+  const layoutMap = isMaitri2 ? maitri2Layout : (isMaitri ? maitriLayout : bharatiLayout);
 
   // Build Flow Nodes
   const nodes = useMemo(() => {
@@ -106,7 +127,6 @@ export default function TopologyGraph({
         data: {
           label: (
             <div
-              onClick={() => onSelectAsset(asset)}
               style={{
                 padding: '10px 12px',
                 cursor: 'pointer',
@@ -181,7 +201,14 @@ export default function TopologyGraph({
   // Build Flow Edges
   const edges = useMemo(() => {
     const edgeList = [];
-    const adjList = dependencies?.adjacencyList || (isMaitri ? {
+    const adjList = dependencies?.adjacencyList || (isMaitri2 ? {
+      "M2-WIND-01": ["M2-BESS-01"],
+      "M2-SOLAR-01": ["M2-BESS-01"],
+      "M2-H2-01": ["M2-BESS-01"],
+      "M2-BESS-01": ["M2-HVAC-01", "M2-PUMP-01", "M2-COM-01", "M2-LAB-01"],
+      "M2-HVAC-01": ["M2-HAB-01"],
+      "M2-PUMP-01": ["M2-HAB-01", "M2-LAB-01"]
+    } : isMaitri ? {
       "MTR-FUEL-01": ["MTR-DG-01", "MTR-DG-02"],
       "MTR-DG-01": ["MTR-BAT-01", "MTR-HVAC-01", "MTR-PUMP-01"],
       "MTR-DG-02": ["MTR-BAT-01", "MTR-HVAC-01"],
@@ -223,7 +250,7 @@ export default function TopologyGraph({
     });
 
     return edgeList;
-  }, [dependencies, intelligence, isMaitri]);
+  }, [dependencies, intelligence, isMaitri, isMaitri2]);
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '620px', position: 'relative', backgroundColor: '#F8FAFC', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
@@ -270,6 +297,10 @@ export default function TopologyGraph({
         attributionPosition="bottom-left"
         minZoom={0.5}
         maxZoom={1.5}
+        onNodeClick={(event, node) => {
+          const clickedAsset = assets.find(a => a.assetId === node.id);
+          if (clickedAsset) onSelectAsset(clickedAsset);
+        }}
       >
         <Controls showInteractive={false} />
         <MiniMap

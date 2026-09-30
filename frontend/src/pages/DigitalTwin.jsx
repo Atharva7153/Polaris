@@ -10,7 +10,7 @@ import {
   Zap, Battery, Wind, Fuel, Activity, Radio, Home, CloudRain,
   ShieldAlert, AlertTriangle, RefreshCw,
   Compass, ArrowRight, Layers, Sliders, ChevronRight,
-  Cpu, Thermometer, GitFork
+  Cpu, Thermometer, GitFork, Package, Anchor, Boxes, Clock, Search
 } from 'lucide-react';
 
 const cardStyle = {
@@ -49,6 +49,8 @@ export default function DigitalTwin() {
   const [detailPanelAsset, setDetailPanelAsset] = useState(null);
   const [activeTab, setActiveTab] = useState('schematic'); // 'schematic' | 'energy' | 'fuel' | 'environment'
   const [filterRisk, setFilterRisk] = useState('ALL');
+  const [sparesCategory, setSparesCategory] = useState('ALL');
+  const [sparesSearch, setSparesSearch] = useState('');
 
   // Simulation Overlay Mode (Part N, O)
   const [isSimulationMode, setIsSimulationMode] = useState(false);
@@ -433,7 +435,8 @@ export default function DigitalTwin() {
               { id: 'topology', label: 'Dependency Graph', icon: GitFork },
               { id: 'energy', label: 'Energy Flow', icon: Zap },
               { id: 'fuel', label: 'Fuel Flow', icon: Fuel },
-              { id: 'environment', label: 'Weather Stress', icon: CloudRain }
+              { id: 'environment', label: 'Weather Stress', icon: CloudRain },
+              { id: 'logistics', label: 'Logistics & Spares', icon: Package }
             ].map(tab => {
               const Icon = tab.icon;
               const isAct = activeTab === tab.id;
@@ -710,6 +713,241 @@ export default function DigitalTwin() {
                 +{stationIntel.environmental?.heatingDeltaPercent || 39}%
               </div>
               <div style={{ fontSize: '12px', color: '#64748B' }}>Added electrical heating demand</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4b. DEDICATED LOGISTICS, SPARES & RESUPPLY OVERLAY */}
+      {activeTab === 'logistics' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Resupply Vessel Tracker Card */}
+          <div style={{ ...cardStyle, padding: '24px', backgroundColor: '#FFFFFF' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Anchor size={22} color="#2563EB" />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#12304A' }}>
+                      Expedition Resupply Tracker · {stationIntel.logistics?.resupplyVessel?.vesselName || 'MV Vasiliy Golovnin'}
+                    </h3>
+                    <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', backgroundColor: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                      44th ISEA CHARTER
+                    </span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748B' }}>
+                    NCPOR / MoES Annual Antarctic Resupply Vessel · {stationIntel.logistics?.resupplyVessel?.voyagePhaseLabel || 'En Route in Southern Ocean'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Countdown Pill */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 16px', borderRadius: '10px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0'
+              }}>
+                <Clock size={18} color="#16A34A" />
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#15803D', textTransform: 'uppercase' }}>Ice Shelf Berthing ETA</div>
+                  <div style={{ fontSize: '17px', fontWeight: 800, color: '#16A34A' }}>
+                    {stationIntel.logistics?.resupplyVessel?.daysUntilArrival ?? 92} Days
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vessel Metadata & Cargo Highlights */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '18px' }}>
+              <div style={{ padding: '14px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>POLAR WINDOW STATUS</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#1E3448', margin: '4px 0' }}>
+                  Austral Summer (Dec–Mar)
+                </div>
+                <div style={{ fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>Fast-Ice Berthing Window Active</div>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>VESSEL INBOUND POSITION</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#1E3448', margin: '4px 0' }}>
+                  54.2° S, {selectedStation?.code === 'MTR' ? '22.1° E' : '46.8° E'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748B' }}>Speed: 13.4 kts · DNV 1A Arc7 Ice Class</div>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>INBOUND BULK FUEL</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#2563EB', margin: '4px 0' }}>
+                  {selectedStation?.code === 'MTR' ? '210,000' : '280,000'} Litres
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748B' }}>Arctic Jet A-1 & Polar High-Flash Diesel</div>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '8px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>CRITICAL OVERHAUL CRATES</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#7C3AED', margin: '4px 0' }}>
+                  {selectedStation?.code === 'MTR' ? '16 Crated Kits' : '22 Crated Kits'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748B' }}>Including scheduled generator overhaul blocks</div>
+              </div>
+            </div>
+
+            {/* Consumable Runway Progress */}
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>
+                STATION CONSUMABLE SURVIVAL RUNWAYS & BUFFER DAYS
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                {[
+                  { label: 'Polar Diesel (Power & Heat)', days: stationIntel.fuel?.remainingRuntimeDays ?? 19.2, status: 'Active Watch', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                  { label: selectedStation?.code === 'MTR' ? 'Priyadarshini Lake Water' : 'Melt Plant Potable Water', days: selectedStation?.code === 'MTR' ? 41 : 54, status: 'Optimal', color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD' },
+                  { label: 'Cryo & Dehydrated Provisions', days: 340, status: 'Fully Stocked', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+                  { label: 'Medical Oxygen & Critical Care', days: 420, status: 'Fully Stocked', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' }
+                ].map((run, i) => (
+                  <div key={i} style={{ padding: '12px 14px', borderRadius: '8px', backgroundColor: run.bg, border: `1px solid ${run.border}` }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: run.color }}>{run.label}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#1E3448', margin: '2px 0' }}>{run.days} Days</div>
+                    <div style={{ fontSize: '11px', color: run.color, fontWeight: 600 }}>Status: {run.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Station Spare Parts Catalog & Local Inventory */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Boxes size={20} color="#2563EB" />
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#12304A' }}>
+                    {selectedStation?.name} Critical Spare Parts & Equipment Inventory
+                  </h3>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748B' }}>
+                  On-station workshop stock mapped to active infrastructure. 280-day lead time outside Austral Summer.
+                </p>
+              </div>
+
+              {/* Search & Filter Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F8FAFC', border: '1px solid #D8E7F0', borderRadius: '8px', padding: '6px 12px' }}>
+                  <Search size={14} color="#64748B" />
+                  <input
+                    type="text"
+                    placeholder="Search spare name, SKU, asset..."
+                    value={sparesSearch}
+                    onChange={(e) => setSparesSearch(e.target.value)}
+                    style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '12px', color: '#1E3448', width: '180px' }}
+                  />
+                </div>
+
+                <select
+                  value={sparesCategory}
+                  onChange={(e) => setSparesCategory(e.target.value)}
+                  style={{
+                    fontSize: '12px', fontWeight: 600, padding: '7px 12px',
+                    borderRadius: '8px', border: '1px solid #D8E7F0', backgroundColor: '#FFFFFF',
+                    color: '#1E3448', outline: 'none', cursor: 'pointer'
+                  }}
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="MECHANICAL">Mechanical & Generators</option>
+                  <option value="HVAC">HVAC & Life Support</option>
+                  <option value="ELECTRICAL">Electrical & Batteries</option>
+                  <option value="PUMP">Pumping & Coolant</option>
+                  <option value="FUEL">Fuel Systems</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Inventory Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #E2E8F0', color: '#64748B' }}>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>PART NAME & SKU</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>COMPATIBLE ASSETS</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>ON-STATION STOCK</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>STORAGE MODULE / BIN</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>STATUS</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right' }}>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stationIntel.logistics?.sparesInventory || [])
+                    .filter(item => {
+                      if (sparesCategory !== 'ALL' && !item.category.includes(sparesCategory)) return false;
+                      if (sparesSearch) {
+                        const q = sparesSearch.toLowerCase();
+                        return item.name.toLowerCase().includes(q) ||
+                               item.partNumber.toLowerCase().includes(q) ||
+                               item.compatibleAssets.some(a => a.toLowerCase().includes(q));
+                      }
+                      return true;
+                    })
+                    .map((item, idx) => {
+                      const isLow = item.status === 'LOW' || item.quantityOnHand <= item.minThreshold;
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ fontWeight: 700, color: '#1E3448' }}>{item.name}</div>
+                            <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#64748B' }}>{item.partNumber}</div>
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                              {item.compatibleAssets.map((ca, i) => (
+                                <span key={i} style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#EFF6FF', color: '#2563EB' }}>
+                                  {ca}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ fontWeight: 800, fontSize: '14px', color: isLow ? '#D97706' : '#16A34A' }}>
+                              {item.quantityOnHand} {item.unit}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#94A3B8' }}>Min threshold: {item.minThreshold}</div>
+                          </td>
+                          <td style={{ padding: '12px', color: '#475569' }}>
+                            {item.location}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{
+                              fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px',
+                              backgroundColor: isLow ? '#FFFBEB' : '#F0FDF4',
+                              color: isLow ? '#B45309' : '#16A34A',
+                              border: `1px solid ${isLow ? '#FDE68A' : '#BBF7D0'}`
+                            }}>
+                              {isLow ? 'LOW STOCK' : 'OPTIMAL'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => {
+                                const targetAssetId = item.compatibleAssets[0];
+                                if (targetAssetId) {
+                                  setSelectedAssetId(targetAssetId);
+                                  const doc = assets.find(a => a.assetId === targetAssetId);
+                                  if (doc) setDetailPanelAsset({ ...doc, intelligence: intelMap[targetAssetId] });
+                                }
+                              }}
+                              style={{
+                                fontSize: '12px', fontWeight: 600, padding: '5px 10px',
+                                borderRadius: '6px', border: '1px solid #D8E7F0', backgroundColor: '#FFFFFF',
+                                color: '#2563EB', cursor: 'pointer'
+                              }}
+                            >
+                              Inspect Asset
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

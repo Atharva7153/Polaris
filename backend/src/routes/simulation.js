@@ -108,14 +108,16 @@ router.post('/trigger-anomaly', async (req, res) => {
 
         const intelligence = await intelligenceService.getUnifiedIntelligence(assetId, badTelemetry.toJSON());
         
-        // Ensure CRITICAL alert generation for live trigger test
-        if (intelligence.risk) {
-            intelligence.risk.level = 'CRITICAL';
-            intelligence.risk.score = 0.98;
+        // Respect true ML model inference; only provide fallback if ML service is offline
+        if (!intelligence.risk || intelligence.status === 'UNAVAILABLE') {
+            intelligence.risk = { level: 'CRITICAL', score: 0.95 };
         }
-        if (intelligence.decision) {
-            intelligence.decision.priority = 'URGENT';
-            intelligence.decision.action = `CRITICAL ANOMALY: Immediate intervention required on ${asset.name} (${assetId}).`;
+        if (!intelligence.decision || intelligence.status === 'UNAVAILABLE') {
+            intelligence.decision = {
+                priority: 'URGENT',
+                action: `CRITICAL ANOMALY: Immediate intervention required on ${asset.name} (${assetId}).`,
+                reason: ['Critical telemetry threshold violation detected by operational safety watchdog.']
+            };
         }
 
         // Pass the REAL socket.io instance

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Compass, CheckCircle2, Sliders,
-  Activity, Clock, Sparkles, RefreshCw, X, Layers, Calculator
+  Activity, Clock, Sparkles, RefreshCw, X, Layers, Calculator,
+  Download, FileText
 } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import client from '../api/client';
 import { socket } from '../App';
+import { toast } from 'react-hot-toast';
 
 const cardStyle = {
   backgroundColor: '#FFFFFF',
@@ -171,6 +173,83 @@ export default function DecisionCenter() {
     }
   };
 
+  const handleExportReport = () => {
+    if (!decisionData || !selectedStation) return;
+    const now = new Date().toISOString();
+    const scenario = decisionData.scenario || {};
+    const baseline = scenario.baseline || {};
+    const recommendation = decisionData.recommendation || {};
+    const actions = decisionData.actions || [];
+    const activeAlert = decisionData.activeAlert;
+    const evidence = decisionData.evidence || [];
+
+    const reportContent = `# NCPOR POLAR MISSION CONTROL — INCIDENT & TACTICAL RESPONSE LOG
+**Platform:** POLARIS Digital Twin Framework (MoES / NCPOR)
+**Classification:** RESTRICTED — ANTARCTIC SCIENTIFIC EXPEDITION OPERATIONS
+**Generated At:** ${now}
+**Station:** ${selectedStation.name} Station (${selectedStation.code})
+**Coordinates:** Lat ${selectedStation.coordinates?.latitude || -69.4}°, Lon ${selectedStation.coordinates?.longitude || 76.1}°
+**Operational Zone:** ${selectedStation.location || 'Larsemann Hills / Schirmacher Oasis'}
+
+---
+
+## 1. INCIDENT BRIEF & BASELINE TELEMETRY
+- **Active Threat / Scenario:** ${activeAlert ? activeAlert.title : scenario.primaryThreat || 'Station Dynamic Simulation'}
+- **Severity Assessment:** ${activeAlert?.severity || baseline.riskLevel || 'ELEVATED'}
+- **Station Baseline Resilience:** ${baseline.resilience}/100 (${baseline.resilienceStatus || 'NORMAL'})
+- **Risk Level:** ${baseline.riskLevel || 'MODERATE'}
+- **Impacted Subsystem:** ${activeAlert?.assetId?.name || 'Integrated Microgrid & Life Support'} (${activeAlert?.assetId?.type || 'Critical'})
+- **Sensor Evidence & Deviations:**
+${evidence.length > 0 ? evidence.map(e => `  - ${e.label}: Current ${e.value} (Nominal: ${e.normal}) -> Impact: ${e.implication}`).join('\n') : '  - Telemetry parameters within normal dynamic ranges'}
+
+---
+
+## 2. POLARIS MULTI-CRITERIA DECISION ANALYSIS (MCDA)
+- **Optimal Automated Recommendation:** ${recommendation.selectedActionName || 'ACTIVATE PREVENTIVE PROTOCOL'}
+- **Action Identifier:** \`${recommendation.selectedActionId}\`
+- **Algorithm Confidence:** ${Math.round((recommendation.confidence || 0.88) * 100)}%
+- **Strategic Operational Rationale:**
+  ${recommendation.rationale || 'Balances life support continuity, thermal preservation, and minimal fuel burn.'}
+- **Projected Resilience:** ${recommendation.projectedResilience || baseline.resilience}/100 (+${(recommendation.projectedResilience || baseline.resilience) - baseline.resilience} pts)
+
+---
+
+## 3. COUNTERFACTUAL TACTICAL ACTIONS SCORING
+The digital twin simulated the following emergency actions under current polar weather conditions:
+
+| Tactical Action | Resilience Delta | Fuel Depletion Impact | Crew Safety Risk | MCDA Score |
+|---|---|---|---|---|
+${actions.map(a => `| ${a.name} | ${a.resilienceDelta >= 0 ? '+' : ''}${a.resilienceDelta} pts | ${a.fuelImpact} | ${a.safetyRisk} | ${a.score}/100 |`).join('\n')}
+
+---
+
+## 4. EXPEDITION RESUPPLY & LOGISTICS BUFFER
+- **Active Resupply Vessel:** MV Vasiliy Golovnin (44th Indian Scientific Expedition to Antarctica)
+- **Vessel Telemetry:** En route to Larsemann Hills / Prydz Bay
+- **Telemetry Communications:** SATCOM Ku-Band / Store-and-Forward Edge Synchronization Active
+
+---
+
+## 5. OPERATIONAL SIGN-OFF & MISSION AUTHENTICATION
+- **Station Commander (${selectedStation.code}):** ___________________________  Date: ____________
+- **Chief Technical Engineer (HVAC/Microgrid):** ___________________________  Date: ____________
+- **NCPOR Mission Operations Control (Goa, India):** ___________________________  Date: ____________
+
+*POLARIS Autonomous Antarctic Digital Twin Engine · National Centre for Polar and Ocean Research (NCPOR)*
+`;
+
+    const blob = new Blob([reportContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `POLARIS_INCIDENT_${selectedStation.code}_${new Date().toISOString().slice(0, 10)}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Mission Incident Log downloaded for ${selectedStation.code}`);
+  };
+
   if (loading) return (
     <div style={{ padding: '80px', textAlign: 'center', color: '#64748B', fontSize: '15px' }}>
       Loading Operational Decision Center & scenario models…
@@ -270,6 +349,20 @@ export default function DecisionCenter() {
               }}
             >
               <Layers size={16} /> Compare Stations
+            </button>
+
+            {/* Export Mission Incident Log */}
+            <button
+              onClick={handleExportReport}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFFFFF',
+                border: '1px solid rgba(255,255,255,0.3)',
+                padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer'
+              }}
+              title="Download official Antarctic Mission Incident & Tactical Response Log"
+            >
+              <Download size={16} /> Export Incident Log
             </button>
           </div>
         </div>
@@ -378,7 +471,7 @@ export default function DecisionCenter() {
                 padding: '10px 14px', textAlign: 'center'
               }}>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>ROOT ASSET THREAT</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#1E3448' }}>{scenario.primaryThreat} (Generator)</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: '#1E3448' }}>{scenario.primaryThreat}</div>
               </div>
 
               <div style={{ textAlign: 'center', color: '#94A3B8', fontSize: '12px', lineHeight: 1 }}>↓ Electrical Bus</div>
@@ -389,10 +482,10 @@ export default function DecisionCenter() {
                 padding: '10px 14px'
               }}>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#D97706', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  DIRECTLY AFFECTED (6 Systems)
+                  DIRECTLY AFFECTED ({baseline.cascadeAssets?.length || 0} Systems)
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {['BAT-01', 'BAT-02', 'HVAC-01', 'HVAC-02', 'PUMP-01', 'COM-01'].map(id => (
+                  {(baseline.cascadeAssets || []).map(id => (
                     <span key={id} style={{
                       fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px',
                       backgroundColor: '#FEF3C7', color: '#92400E'

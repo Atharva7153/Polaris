@@ -10,6 +10,7 @@
  */
 
 const resilienceService = require('./resilienceService');
+const logisticsService = require('./logisticsService');
 
 /**
  * Builds the complete Decision Center operational scenario payload.
@@ -55,6 +56,15 @@ function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts 
     // Select the optimal recommended action via deterministic multi-criteria scoring
     const recommendation = evaluateBestAction(actions, baseline);
 
+    // Logistics & Spares Context
+    const stationCode = station?.code || 'BHR';
+    const compatibleSpares = logisticsService.getSparesForAsset(stationCode, primaryAssetId);
+    const vessel = logisticsService.getResupplyVesselStatus(stationCode);
+    const hasSparesInStock = compatibleSpares.length > 0 && compatibleSpares.some(s => s.quantityOnHand > 0);
+    const sparesSummaryText = compatibleSpares.length > 0
+        ? compatibleSpares.map(s => `${s.name}: ${s.quantityOnHand} ${s.unit} in ${s.location}`).join('; ')
+        : 'Standard polar workshop spares and replacement assemblies available.';
+
     // Build Supporting Evidence Checklist (Part 7)
     const evidence = [
         {
@@ -81,6 +91,16 @@ function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts 
             verified: true,
             claim: `Station fuel reserves (${baseline.fuelLevel}%) provide ${baseline.fuelDays} days of nominal runtime.`,
             metric: `Burn Rate: ${baseline.fuelBurnRate}%/day`
+        },
+        {
+            verified: hasSparesInStock,
+            claim: `Station spares stock verified for ${primaryAssetId}: ${sparesSummaryText}`,
+            metric: `Spares On Hand: ${compatibleSpares.reduce((acc, s) => acc + s.quantityOnHand, 0)} units`
+        },
+        {
+            verified: true,
+            claim: `44th ISEA Resupply Vessel (${vessel.vesselName}) is ${vessel.daysUntilArrival} days from berthing; austral summer window is ${vessel.polarWindowStatus}.`,
+            metric: `Vessel ETA: ${vessel.daysUntilArrival}d`
         }
     ];
 
@@ -98,7 +118,8 @@ function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts 
         station: {
             resilience: `Current station resilience stands at ${baseline.resilience}/100 (${baseline.resilienceStatus}).`,
             energy: `Available margin is ${baseline.energyMargin} kW. Failure would produce immediate deficit of ${baseline.estimatedDemand} kW.`,
-            fuel: `Fuel reserve is sufficient for ${baseline.fuelDays} days at current generator burn rate.`
+            fuel: `Fuel reserve is sufficient for ${baseline.fuelDays} days at current generator burn rate.`,
+            logistics: `${compatibleSpares.length} compatible spare parts types on station; next resupply ship is ${vessel.daysUntilArrival} days out.`
         }
     };
 
@@ -122,6 +143,11 @@ function buildDecisionCenterScenario(station, stationIntelligence, activeAlerts 
         actions,
         recommendation,
         evidence,
+        logistics: {
+            spares: compatibleSpares,
+            vessel: vessel,
+            hasSparesInStock
+        },
         activeAlert: activeAlerts.find(a => a.assetId?.assetId === primaryAssetId || a.assetName?.includes(primaryAssetId)) || activeAlerts[0] || null
     };
 }
@@ -335,10 +361,15 @@ function evaluateBestAction(actions, baseline) {
         a.rank = i + 1;
     });
 
+    // Calibrate recommendation confidence dynamically based on score strength & dominance margin
+    const runnerUpScore = actions.length > 1 ? actions[1].decisionScore : (highestScore - 15);
+    const scoreLead = Math.max(0, highestScore - runnerUpScore);
+    const dynamicConfidence = Number(Math.min(0.98, Math.max(0.68, (highestScore / 100) * 0.60 + Math.min(0.35, (scoreLead / 20) * 0.35))).toFixed(2));
+
     return {
         selectedActionId: bestAction.id,
         selectedActionName: bestAction.name,
-        confidence: 0.94,
+        confidence: dynamicConfidence,
         score: highestScore,
         headline: `Recommended Response: ${bestAction.name}`,
         rationale: `This response achieves the highest operational utility (${highestScore}/100). It produces an optimal resilience gain (${bestAction.simulated.resilienceDelta > 0 ? '+' : ''}${bestAction.simulated.resilienceDelta} pts) while expanding the energy safety margin to ${bestAction.simulated.energyMargin} kW and isolating downstream cascade exposure.`,

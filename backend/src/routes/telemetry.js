@@ -1,6 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const Telemetry = require('../models/Telemetry');
+const scadaBridgeService = require('../services/scadaBridgeService');
+
+// Industrial SCADA Modbus TCP Status & Register Inspector Endpoint
+router.get('/scada/status', async (req, res) => {
+    try {
+        const stationCode = req.query.stationCode || 'BHR';
+        const latestTelemetry = await Telemetry.findOne().sort({ timestamp: -1 });
+        const scadaStatus = scadaBridgeService.getScadaGatewayStatus(latestTelemetry, stationCode);
+        res.json({ success: true, data: scadaStatus });
+    } catch (err) {
+        console.error("SCADA status error:", err);
+        res.status(500).json({ success: false, message: 'Server error retrieving SCADA gateway status' });
+    }
+});
 
 router.get('/:assetId', async (req, res) => {
     try {

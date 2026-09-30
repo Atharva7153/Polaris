@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useStation } from '../contexts/StationContext';
 import { User2, MapPin, Bell, Shield, Activity } from 'lucide-react';
 import PingPongMonitor from '../components/PingPongMonitor';
+import ScadaGatewayConsole from '../components/ScadaGatewayConsole';
 
 const sectionStyle = {
   backgroundColor: '#FFFFFF',
@@ -57,6 +58,9 @@ export default function Settings() {
 
       {/* Interactive Ping-Pong Point */}
       <PingPongMonitor />
+
+      {/* Industrial SCADA & Modbus Gateway Inspector */}
+      <ScadaGatewayConsole />
 
       <Section icon={User2} title="Account">
         <Field label="Name"  value={user?.name}  />

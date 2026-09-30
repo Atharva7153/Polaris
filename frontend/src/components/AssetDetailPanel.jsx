@@ -1,4 +1,4 @@
-import { X, Box, Activity, Sliders, ArrowRight } from 'lucide-react';
+import { X, Box, Activity, Sliders, ArrowRight, Package, Wrench } from 'lucide-react';
 import TelemetryChart from './TelemetryChart';
 import { useState, useEffect } from 'react';
 import client from '../api/client';
@@ -19,6 +19,8 @@ const riskColors = {
 export default function AssetDetailPanel({ asset, onClose }) {
   const [telemetry, setTelemetry] = useState([]);
   const [telLoading, setTelLoading] = useState(true);
+  const [spares, setSpares] = useState([]);
+  const [sparesLoading, setSparesLoading] = useState(false);
   
   // Simulation State
   const [showSim, setShowSim] = useState(false);
@@ -31,6 +33,7 @@ export default function AssetDetailPanel({ asset, onClose }) {
   useEffect(() => { 
     if (asset) {
       loadTelemetry();
+      loadSpares();
       if (asset.intelligence && asset.intelligence.telemetry) {
         setSimTemp(asset.intelligence.telemetry.temperature || 80);
         setSimVib(asset.intelligence.telemetry.vibration || 0.15);
@@ -38,6 +41,19 @@ export default function AssetDetailPanel({ asset, onClose }) {
       }
     }
   }, [asset]);
+
+  const loadSpares = async () => {
+    if (!asset || !asset.stationId || !asset.assetId) return;
+    setSparesLoading(true);
+    try {
+      const res = await client.get(`/stations/${asset.stationId}/assets/${asset.assetId}/spares`);
+      setSpares(res.data.data || []);
+    } catch {
+      setSpares([]);
+    } finally {
+      setSparesLoading(false);
+    }
+  };
 
   const loadTelemetry = async () => {
     setTelLoading(true);
@@ -367,6 +383,58 @@ export default function AssetDetailPanel({ asset, onClose }) {
                 fontSize: '13px', color: '#64748B',
               }}>
                 No telemetry data
+              </div>
+            )}
+          </div>
+
+          {/* Station Spares & Maintenance Logistics */}
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #D8E7F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Package size={16} color="#2563EB" />
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1E3448', margin: 0 }}>
+                  Station Spares & Field Logistics
+                </h3>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>
+                {spares.length} item{spares.length === 1 ? '' : 's'} on site
+              </span>
+            </div>
+
+            {sparesLoading ? (
+              <div style={{ padding: '16px', textAlign: 'center', fontSize: '12px', color: '#64748B', backgroundColor: '#F8FAFC', borderRadius: '8px' }}>
+                Checking station storage inventory…
+              </div>
+            ) : spares.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {spares.map((sp, idx) => {
+                  const isLow = sp.status === 'LOW' || sp.quantityOnHand <= sp.minThreshold;
+                  return (
+                    <div key={idx} style={{
+                      backgroundColor: '#F8FAFC', border: `1px solid ${isLow ? '#FDE68A' : '#E2E8F0'}`,
+                      borderRadius: '8px', padding: '10px 12px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1E3448' }}>{sp.name}</span>
+                        <span style={{
+                          fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                          backgroundColor: isLow ? '#FFFBEB' : '#F0FDF4', color: isLow ? '#B45309' : '#16A34A',
+                          border: `1px solid ${isLow ? '#FDE68A' : '#BBF7D0'}`
+                        }}>
+                          {sp.quantityOnHand} {sp.unit} ({isLow ? 'LOW' : 'OK'})
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                        <span>SKU: {sp.partNumber}</span>
+                        <span>Location: {sp.location}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: '12px 14px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px', color: '#64748B' }}>
+                Standard polar workshop spares and consumables apply to this equipment.
               </div>
             )}
           </div>

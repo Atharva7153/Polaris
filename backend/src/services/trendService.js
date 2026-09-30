@@ -16,7 +16,6 @@ const Asset = require('../models/Asset');
  */
 async function getStationTrends(stationId, timeframe = '24h') {
     const hours = timeframe === '6h' ? 6 : timeframe === '12h' ? 12 : 24;
-    const sinceDate = new Date(Date.now() - hours * 3600000);
 
     const assets = await Asset.find({ stationId });
     if (!assets || assets.length === 0) {
@@ -26,6 +25,13 @@ async function getStationTrends(stationId, timeframe = '24h') {
     const dg01 = assets.find(a => a.assetId === 'DG-001') || assets.find(a => a.type?.includes('Generator'));
     const fuelAsset = assets.find(a => a.assetId === 'FUEL-01') || assets.find(a => a.type?.includes('Fuel'));
     const envAsset = assets.find(a => a.assetId === 'ENV-01') || assets.find(a => a.type?.includes('Environmental'));
+
+    let referenceTime = Date.now();
+    if (dg01) {
+        const latest = await Telemetry.findOne({ assetId: dg01._id }).sort({ timestamp: -1 });
+        if (latest) referenceTime = latest.timestamp.getTime();
+    }
+    const sinceDate = new Date(referenceTime - hours * 3600000);
 
     // Fetch telemetry across the timeframe
     const [dgTelemetry, fuelTelemetry, envTelemetry] = await Promise.all([

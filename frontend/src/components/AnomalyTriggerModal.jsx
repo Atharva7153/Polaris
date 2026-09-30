@@ -15,9 +15,10 @@ export default function AnomalyTriggerModal({ isOpen, onClose, activeStation, on
   if (!isOpen) return null;
 
   const isMaitri = activeStation?.code === 'MTR';
-  const defaultDg = isMaitri ? 'MTR-DG-01' : 'DG-001';
-  const defaultBat = isMaitri ? 'MTR-BAT-01' : 'BAT-01';
-  const defaultHvac = isMaitri ? 'MTR-HVAC-01' : 'HVAC-01';
+  const isMaitri2 = activeStation?.code === 'MTR2';
+  const defaultDg = isMaitri2 ? 'M2-WIND-01' : isMaitri ? 'MTR-DG-01' : 'DG-001';
+  const defaultBat = isMaitri2 ? 'M2-BESS-01' : isMaitri ? 'MTR-BAT-01' : 'BAT-01';
+  const defaultHvac = isMaitri2 ? 'M2-HVAC-01' : isMaitri ? 'MTR-HVAC-01' : 'HVAC-01';
   const defaultFuel = isMaitri ? 'MTR-FUEL-01' : 'FUEL-01';
 
   const scenarios = [
@@ -348,7 +349,7 @@ export default function AnomalyTriggerModal({ isOpen, onClose, activeStation, on
                     border: '1px solid #CBD5E1', fontSize: '13px', fontWeight: 600, color: '#1E3448', backgroundColor: '#FFFFFF'
                   }}
                 >
-                  {(isMaitri ? ['MTR-DG-01', 'MTR-DG-02', 'MTR-BAT-01', 'MTR-HVAC-01', 'MTR-PUMP-01', 'MTR-FUEL-01'] : ['DG-001', 'DG-002', 'BAT-01', 'BAT-02', 'HVAC-01', 'PUMP-01', 'COM-01', 'FUEL-01']).map(id => (
+                  {(isMaitri2 ? ['M2-WIND-01', 'M2-SOLAR-01', 'M2-BESS-01', 'M2-HVAC-01', 'M2-PUMP-01', 'M2-H2-01', 'M2-COM-01', 'M2-AWS-01', 'M2-HAB-01', 'M2-LAB-01'] : isMaitri ? ['MTR-DG-01', 'MTR-DG-02', 'MTR-BAT-01', 'MTR-HVAC-01', 'MTR-PUMP-01', 'MTR-FUEL-01'] : ['DG-001', 'DG-002', 'BAT-01', 'BAT-02', 'HVAC-01', 'PUMP-01', 'COM-01', 'FUEL-01']).map(id => (
                     <option key={id} value={id}>{id}</option>
                   ))}
                 </select>

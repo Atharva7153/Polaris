@@ -6,3 +6,4 @@ pkg["scripts"]["dev:ml"] = "cd ml && source venv/bin/activate && uvicorn app.mai
 
 with open("package.json", "w") as f:
     json.dump(pkg, f, indent=2)
+

@@ -38,7 +38,9 @@ def detect_anomaly(telemetry_dict: dict) -> dict:
     
     detected = bool(prediction == -1)
     
-    confidence = 0.90 if detected else 0.95
+    # Mathematically derived confidence based on distance from the decision boundary (0.5 normalized threshold)
+    boundary_distance = abs(normalized_score - 0.5)
+    confidence = round(min(0.99, max(0.65, 0.50 + boundary_distance * 0.98)), 2)
     
     # Base risk level from anomaly
     risk_level = "LOW"
@@ -52,7 +54,7 @@ def detect_anomaly(telemetry_dict: dict) -> dict:
 
     return {
         "detected": detected,
-        "score": round(normalized_score, 2),
-        "confidence": confidence,
+        "score": round(float(normalized_score), 2),
+        "confidence": round(float(confidence), 2),
         "riskLevel": risk_level
     }
