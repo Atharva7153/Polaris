@@ -2,9 +2,9 @@ services:
   # ── 1. ML Service (FastAPI / Python) ─────────────────────────────────────
   - type: web
     name: polaris-ml
-    env: docker                        # use Dockerfile instead of buildpacks
+    env: docker
     rootDir: ml
-    dockerfilePath: ./Dockerfile
+    # dockerfilePath is omitted — Render auto-finds Dockerfile inside rootDir
     plan: free
     envVars:
       - key: PORT
@@ -13,7 +13,6 @@ services:
         sync: false                    # Set this manually in the Render dashboard
       - key: GROQ_MODEL
         value: llama3-70b-8192
-    # Render native health-check (also used by UptimeRobot — see below)
     healthCheckPath: /ping
 
   # ── 2. Backend Service (Node / Express) ──────────────────────────────────
@@ -21,7 +20,6 @@ services:
     name: polaris-backend
     env: docker
     rootDir: backend
-    dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: PORT
@@ -29,7 +27,7 @@ services:
       - key: MONGO_URI
         sync: false                    # Paste your MongoDB Atlas URI here
       - key: JWT_SECRET
-        generateValue: true            # Render auto-generates a secure random value
+        generateValue: true
       - key: FRONTEND_URL
         fromService:
           type: web
@@ -42,15 +40,12 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
     healthCheckPath: /api/ping
 
-  # ── 3. Frontend Service (Vite → nginx static) ────────────────────────────
+  # ── 3. Frontend Service (Vite → nginx) ────────────────────────────────────
   - type: web
     name: polaris-frontend
     env: docker
     rootDir: frontend
-    dockerfilePath: ./Dockerfile
     plan: free
-    # VITE_API_URL is a build-arg baked into the JS bundle at build time.
-    # Render passes build args via the `dockerContext` + `dockerBuildArgs` block.
     dockerBuildArgs:
       - key: VITE_API_URL
         fromService:
@@ -58,4 +53,3 @@ services:
           name: polaris-backend
           envVarKey: RENDER_EXTERNAL_URL
     healthCheckPath: /ping
-    # SPA routing is handled by nginx inside the container — no `routes` block needed.
