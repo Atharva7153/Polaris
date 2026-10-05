@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// Priority:
+//   1. window.__POLARIS_API_URL__  — set at container start by entrypoint.sh (Render/Docker)
+//   2. import.meta.env.VITE_API_URL — set at build time (local `npm run dev`)
+//   3. localhost fallback
+const rawApiUrl =
+    (typeof window !== 'undefined' && window.__POLARIS_API_URL__) ||
+    import.meta.env.VITE_API_URL ||
+    'http://localhost:5001';
 const baseURL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
 
 const client = axios.create({

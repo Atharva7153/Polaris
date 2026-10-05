@@ -1,25 +1,17 @@
 services:
-  # ──────────────────────────────────────────────────────────────────────────────
-  # 1. ML Service — FastAPI / Python
-  #    Dockerfile.ml lives at REPO ROOT — build context is the full repo
-  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-ml
     env: docker
     region: oregon
     plan: free
-    dockerfilePath: ./Dockerfile.ml        # ← repo-root file, no dockerContext needed
+    dockerfilePath: ./Dockerfile.ml
     healthCheckPath: /ping
     envVars:
       - key: GROQ_API_KEY
-        sync: false                        # paste in Render dashboard
+        sync: false
       - key: GROQ_MODEL
         value: llama3-70b-8192
 
-  # ──────────────────────────────────────────────────────────────────────────────
-  # 2. Backend — Node.js / Express
-  #    Dockerfile.backend lives at REPO ROOT
-  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-backend
     env: docker
@@ -29,7 +21,7 @@ services:
     healthCheckPath: /api/ping
     envVars:
       - key: MONGO_URI
-        sync: false                        # paste in Render dashboard
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: ML_SERVICE_URL
@@ -43,10 +35,6 @@ services:
           name: polaris-frontend
           envVarKey: RENDER_EXTERNAL_URL
 
-  # ──────────────────────────────────────────────────────────────────────────────
-  # 3. Frontend — Vite / React served by nginx
-  #    Dockerfile.frontend lives at REPO ROOT
-  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-frontend
     env: docker
@@ -54,8 +42,8 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile.frontend
     healthCheckPath: /ping
-    dockerBuildArgs:
-      - key: VITE_API_URL
+    envVars:
+      - key: API_URL
         fromService:
           type: web
           name: polaris-backend
