@@ -24,8 +24,12 @@ import SplashScreen from './components/SplashScreen';
 import { Toaster, toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
 
-// VITE_API_URL can now be the root URL directly from Render
-const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// VITE_API_URL can now be the root URL directly from Render or same-origin in Docker
+const defaultApiUrl =
+    typeof window !== 'undefined' && window.location.port !== '5173'
+        ? window.location.origin
+        : 'http://localhost:5001';
+const rawApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
 const backendUrl = rawApiUrl.replace(/\/api$/, ''); // Strip /api if it was manually included
 const socket = io(backendUrl);
 

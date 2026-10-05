@@ -4,21 +4,24 @@ const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
+const path = require('path');
+const fs = require('fs');
+const connectDB = require('./db');
+
 dotenv.config();
 
 const app = express();
+const allowedOrigin = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : true;
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: allowedOrigin,
     credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://<username>:<password>@<cluster-url>/polaris?retryWrites=true&w=majority')
-    .then(() => console.log('MongoDB connected successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// Connect to MongoDB (with fallback & auto-seed when empty)
+connectDB();
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -91,13 +94,25 @@ app.get('/api/ping', async (req, res) => {
     });
 });
 
+// Serve built frontend static assets when deployed in unified container
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath));
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+            return next();
+        }
+        res.sendFile(path.join(frontendDistPath, 'index.html'));
+    });
+}
+
 const http = require('http');
 const { Server } = require('socket.io');
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: allowedOrigin,
         credentials: true
     }
 });
@@ -124,6 +139,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server running on port ${PORT}`);
 });
