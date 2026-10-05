@@ -36,20 +36,26 @@ app.use('/api/decision-center', require('./routes/decisionCenter'));
 const intelligenceService = require('./services/intelligenceService');
 const axios = require('axios');
 
-app.get('/api/health', async (req, res) => {
+const handleHealth = async (req, res) => {
     const mlHealth = await intelligenceService.getHealth();
     res.json({
+        status: "healthy",
         backend: "healthy",
         database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-        ml: mlHealth.status === "UNAVAILABLE" ? "unavailable" : "connected"
+        ml: mlHealth.status === "UNAVAILABLE" ? "unavailable" : "connected",
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
     });
-});
+};
+
+app.get('/api/health', handleHealth);
+app.get('/health', handleHealth);
 
 /**
- * GET /api/ping
- * Returns backend pong, and tests roundtrip latency to ML service and MongoDB.
+ * GET /ping & GET /api/ping
+ * Returns backend pong, and tests roundtrip latency to ML service and MongoDB for monitoring.
  */
-app.get('/api/ping', async (req, res) => {
+const handlePing = async (req, res) => {
     const start = Date.now();
 
     // 1. Measure ML Service Ping & Latency
@@ -82,24 +88,30 @@ app.get('/api/ping', async (req, res) => {
         dbPing = { status: "error", error: e.message };
     }
 
-    res.json({
+    res.status(200).json({
         status: "pong",
-        service: "backend",
+        message: "pong",
+        service: "polaris-unified",
+        uptimeSeconds: Math.floor(process.uptime()),
         timestamp: Date.now(),
+        isoTimestamp: new Date().toISOString(),
         latencyMs: Date.now() - start,
         dependencies: {
             ml: mlPing,
             database: dbPing
         }
     });
-});
+};
+
+app.get('/api/ping', handlePing);
+app.get('/ping', handlePing);
 
 // Serve built frontend static assets when deployed in unified container
 const frontendDistPath = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDistPath)) {
     app.use(express.static(frontendDistPath));
     app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+        if (req.path.startsWith('/api') || req.path.startsWith('/socket.io') || req.path === '/ping' || req.path === '/health') {
             return next();
         }
         res.sendFile(path.join(frontendDistPath, 'index.html'));

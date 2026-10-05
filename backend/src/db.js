@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { execFileSync } = require('child_process');
 const path = require('path');
+const bcrypt = require('bcrypt');
 const Station = require('./models/Station');
+const User = require('./models/User');
 
 async function connectDB() {
     let uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/polaris';
@@ -36,6 +38,21 @@ async function connectDB() {
                 stdio: 'inherit'
             });
             console.log('Initial database seeding complete.');
+        }
+
+        // Always ensure the demo judge account exists
+        const demoEmail = 'admin@polaris.gov';
+        const existingAdmin = await User.findOne({ email: demoEmail });
+        if (!existingAdmin) {
+            const salt = await bcrypt.genSalt(10);
+            const passwordHash = await bcrypt.hash('password123', salt);
+            await User.create({
+                name: 'Cmdr. Sharma',
+                email: demoEmail,
+                password: passwordHash,
+                role: 'ADMIN'
+            });
+            console.log('Created demo judge account: admin@polaris.gov');
         }
     } catch (seedErr) {
         console.error('Database auto-seed warning:', seedErr.message);

@@ -25,6 +25,30 @@ export default function Login() {
     }
   };
 
+  const DEMO_EMAIL = 'admin@polaris.gov';
+  const DEMO_PASSWORD = 'password123';
+
+  const handleFillDemo = () => {
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
+    setError(null);
+  };
+
+  const handleInstantDemoLogin = async () => {
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
+    setLoading(true);
+    setError(null);
+    try {
+      await login(DEMO_EMAIL, DEMO_PASSWORD);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Demo login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inputStyle = {
     width: '100%',
     padding: '11px 14px',
@@ -114,11 +138,11 @@ export default function Login() {
       {/* Right panel — login form */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '32px',
+        padding: '32px', overflowY: 'auto',
       }}>
         <div style={{ width: '100%', maxWidth: '400px' }}>
           {/* Mobile logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
             <div style={{
               width: '48px', height: '48px', borderRadius: '12px',
               backgroundColor: '#2563EB',
@@ -136,9 +160,68 @@ export default function Login() {
           <h2 style={{ fontSize: '26px', fontWeight: 700, color: '#12304A', margin: '0 0 8px' }}>
             Welcome back
           </h2>
-          <p style={{ fontSize: '15px', color: '#64748B', margin: '0 0 32px' }}>
+          <p style={{ fontSize: '15px', color: '#64748B', margin: '0 0 24px' }}>
             Sign in to access Mission Control
           </p>
+
+          {/* Judge / Demo Credentials Card */}
+          <div style={{
+            padding: '14px 16px',
+            marginBottom: '22px',
+            backgroundColor: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            borderRadius: '10px',
+            fontSize: '13px',
+            color: '#1E3A8A',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '8px',
+            }}>
+              <span style={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1D4ED8' }}>
+                Judge / Demo Access Credentials
+              </span>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, backgroundColor: '#DBEAFE',
+                color: '#1E40AF', padding: '2px 8px', borderRadius: '999px'
+              }}>
+                ADMIN ROLE
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px', fontFamily: 'monospace', fontSize: '13px' }}>
+              <div><strong style={{ fontFamily: 'Inter, sans-serif', color: '#475569' }}>Email:</strong> {DEMO_EMAIL}</div>
+              <div><strong style={{ fontFamily: 'Inter, sans-serif', color: '#475569' }}>Password:</strong> {DEMO_PASSWORD}</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleFillDemo}
+                style={{
+                  flex: 1, padding: '8px 12px',
+                  backgroundColor: '#FFFFFF', color: '#1D4ED8',
+                  border: '1px solid #93C5FD', borderRadius: '6px',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Auto-Fill Form
+              </button>
+              <button
+                type="button"
+                onClick={handleInstantDemoLogin}
+                disabled={loading}
+                style={{
+                  flex: 1, padding: '8px 12px',
+                  backgroundColor: '#2563EB', color: '#FFFFFF',
+                  border: 'none', borderRadius: '6px',
+                  fontSize: '12px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                1-Click Judge Login
+              </button>
+            </div>
+          </div>
 
           {error && (
             <div style={{
@@ -159,6 +242,7 @@ export default function Login() {
               }}>Email</label>
               <input
                 type="email"
+                placeholder="admin@polaris.gov"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 style={inputStyle}
@@ -173,6 +257,7 @@ export default function Login() {
               }}>Password</label>
               <input
                 type="password"
+                placeholder="•••••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 style={inputStyle}
@@ -205,7 +290,7 @@ export default function Login() {
             </button>
           </form>
 
-          <p style={{ fontSize: '13px', color: '#94A3B8', textAlign: 'center', marginTop: '32px' }}>
+          <p style={{ fontSize: '13px', color: '#94A3B8', textAlign: 'center', marginTop: '28px' }}>
             POLARIS v2 · Indian Antarctic Program
           </p>
         </div>
