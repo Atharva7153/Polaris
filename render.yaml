@@ -1,59 +1,61 @@
 services:
-  # 1. ML Service (FastAPI)
+  # ── 1. ML Service (FastAPI / Python) ─────────────────────────────────────
   - type: web
     name: polaris-ml
-    env: python
+    env: docker                        # use Dockerfile instead of buildpacks
     rootDir: ml
-    buildCommand: "pip install -r requirements.txt && python scripts/train_models.py"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    dockerfilePath: ./Dockerfile
+    plan: free
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.0
+      - key: PORT
+        value: 8000
       - key: GROQ_API_KEY
-        sync: false # Requires user to input this in the Render dashboard
+        sync: false                    # Set this manually in the Render dashboard
+      - key: GROQ_MODEL
+        value: llama3-70b-8192
+    # Render native health-check (also used by UptimeRobot — see below)
+    healthCheckPath: /ping
 
-  # 2. Backend Service (Node.js)
+  # ── 2. Backend Service (Node / Express) ──────────────────────────────────
   - type: web
     name: polaris-backend
-    env: node
+    env: docker
     rootDir: backend
-    buildCommand: "npm install"
-    startCommand: "npm start"
+    dockerfilePath: ./Dockerfile
+    plan: free
     envVars:
-      - key: NODE_VERSION
-        value: 20.x
-      - key: ML_SERVICE_URL
-        fromService:
-          type: web
-          name: polaris-ml
-          envVarKey: RENDER_EXTERNAL_URL
+      - key: PORT
+        value: 5001
       - key: MONGO_URI
-        sync: false # User needs to provide their own MongoDB Atlas URI
+        sync: false                    # Paste your MongoDB Atlas URI here
       - key: JWT_SECRET
-        generateValue: true
+        generateValue: true            # Render auto-generates a secure random value
       - key: FRONTEND_URL
         fromService:
           type: web
           name: polaris-frontend
           envVarKey: RENDER_EXTERNAL_URL
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: polaris-ml
+          envVarKey: RENDER_EXTERNAL_URL
+    healthCheckPath: /api/ping
 
-  # 3. Frontend Service (Vite Static Site)
+  # ── 3. Frontend Service (Vite → nginx static) ────────────────────────────
   - type: web
     name: polaris-frontend
-    env: static
+    env: docker
     rootDir: frontend
-    buildCommand: "npm install && npm run build"
-    staticPublishPath: "./dist"
-    envVars:
-      - key: NODE_VERSION
-        value: 20.x
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # VITE_API_URL is a build-arg baked into the JS bundle at build time.
+    # Render passes build args via the `dockerContext` + `dockerBuildArgs` block.
+    dockerBuildArgs:
       - key: VITE_API_URL
         fromService:
           type: web
           name: polaris-backend
           envVarKey: RENDER_EXTERNAL_URL
-    # Ensure client-side routing works (Vite/React Router)
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    healthCheckPath: /ping
+    # SPA routing is handled by nginx inside the container — no `routes` block needed.
