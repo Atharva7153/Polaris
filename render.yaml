@@ -1,57 +1,75 @@
 services:
-  # ── 1. ML Service (FastAPI / Python) ─────────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────────────────
+  # 1. ML Service — Python / FastAPI
+  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-ml
-    env: docker
-    dockerfilePath: ./ml/Dockerfile       # path from repo root
-    dockerContext: ./ml                   # build context = ml/ folder
+    env: python
+    region: oregon
     plan: free
+    rootDir: ml
+    buildCommand: pip install -r requirements.txt && python scripts/train_models.py
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /ping
     envVars:
-      - key: PORT
-        value: 8000
+      - key: PYTHON_VERSION
+        value: 3.10.0
       - key: GROQ_API_KEY
-        sync: false
+        sync: false          # ← paste in Render dashboard
       - key: GROQ_MODEL
         value: llama3-70b-8192
-    healthCheckPath: /ping
 
-  # ── 2. Backend Service (Node / Express) ──────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────────────────
+  # 2. Backend — Node.js / Express
+  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-backend
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    env: node
+    region: oregon
     plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/ping
     envVars:
-      - key: PORT
-        value: 5001
+      - key: NODE_VERSION
+        value: 20.11.0
       - key: MONGO_URI
-        sync: false
+        sync: false          # ← paste in Render dashboard
       - key: JWT_SECRET
-        generateValue: true
-      - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: polaris-frontend
-          envVarKey: RENDER_EXTERNAL_URL
+        generateValue: true  # Render auto-generates a strong random value
       - key: ML_SERVICE_URL
         fromService:
           type: web
           name: polaris-ml
           envVarKey: RENDER_EXTERNAL_URL
-    healthCheckPath: /api/ping
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: polaris-frontend
+          envVarKey: RENDER_EXTERNAL_URL
 
-  # ── 3. Frontend Service (Vite → nginx) ────────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────────────────
+  # 3. Frontend — Vite / React (static site)
+  # ──────────────────────────────────────────────────────────────────────────────
   - type: web
     name: polaris-frontend
-    env: docker
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
+    env: static
+    region: oregon
     plan: free
-    dockerBuildArgs:
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
       - key: VITE_API_URL
         fromService:
           type: web
           name: polaris-backend
           envVarKey: RENDER_EXTERNAL_URL
-    healthCheckPath: /ping
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
